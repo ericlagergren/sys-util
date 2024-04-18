@@ -134,6 +134,7 @@ impl AuxVal {
             | Type::AT_EGID
             | Type::AT_CLKTCK
             | Type::AT_SECURE
+            | Type::AT_NOTELF
             | Type::AT_MINSIGSTKSZ => self.val.fmt(f),
             Type::AT_EXECFN | Type::AT_PLATFORM => {
                 let ptr = self.val as *const i8;
