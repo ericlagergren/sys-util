@@ -510,5 +510,6 @@ mod tests {
     fn it_works() {
         let v = super::AuxVec::from_static();
         println!("{v:#}");
+        println!("{v:?}");
     }
 }
