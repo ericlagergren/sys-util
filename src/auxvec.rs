@@ -138,9 +138,9 @@ impl AuxVal {
                     // but we have to trust that it is
                     // null-terminated.
                     let s = unsafe { core::ffi::CStr::from_ptr(ptr) };
-                    s.to_str().unwrap_or("???").fmt(s)
+                    s.to_str().unwrap_or("???").fmt(f)
                 } else {
-                    "???".fmt(s)
+                    "???".fmt(f)
                 }
             }
             _ => self.write_val_simple(f),
