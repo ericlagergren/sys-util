@@ -398,7 +398,7 @@ impl Display for Type {
         if let Some(s) = self.to_str() {
             s.fmt(f)
         } else {
-            write!(f, "Type({})", self.0)
+            write!(f, "AT_??? ({})", self.0)
         }
     }
 }
