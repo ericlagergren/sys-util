@@ -131,7 +131,7 @@ impl AuxVal {
             | Type::AT_CLKTCK
             | Type::AT_SECURE
             | Type::AT_MINSIGSTKSZ => self.val.fmt(f),
-            Type::AT_EXECFN => {
+            Type::AT_EXECFN | Type::AT_PLATFORM => {
                 let ptr = self.val as *const i8;
                 if !ptr.is_null() {
                     // SAFETY: we know that `ptr` is non-null,
@@ -183,11 +183,11 @@ impl AuxVal {
 
 impl Display for AuxVal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}: ", self.key)?;
+        write!(f, "{:20}: ", self.key)?;
         if f.alternate() {
-            self.write_val_simple(f)
-        } else {
             self.write_val_alt(f)
+        } else {
+            self.write_val_simple(f)
         }
     }
 }
