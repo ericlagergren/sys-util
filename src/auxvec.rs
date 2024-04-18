@@ -135,7 +135,7 @@ impl AuxVal {
                     // but we have to trust that it is
                     // null-terminated.
                     let s = unsafe { core::ffi::CStr::from_ptr(ptr) };
-                    s.fmt(s)
+                    s.to_str().unwrap_or("???").fmt(s)
                 } else {
                     "???".fmt(s)
                 }
