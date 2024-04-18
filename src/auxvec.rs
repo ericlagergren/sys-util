@@ -19,6 +19,40 @@ cfg_if! {
     }
 }
 
+/// See libc's `getauxval`.
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "illumos",
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "solaris",
+))]
+#[cfg_attr(
+    docs,
+    doc(cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "solaris",
+    )))
+)]
+pub fn getauxval(key: Type) -> Option<Word> {
+    // TODO
+    // use core::sync::atomic::{AtomicU64, Ordering};
+    // const HWCAPS: AtomicU64 = AtomicU64::new(0);
+
+    let aux = AuxVec::from_static();
+    for v in aux {
+        if v.key == key {
+            return Some(v.val);
+        }
+    }
+    None
+}
+
 /// The ELF auxiliary vector.
 #[derive(Debug)]
 #[repr(transparent)]
@@ -513,7 +547,13 @@ mod tests {
         target_os = "solaris",
     ))]
     fn it_works() {
-        let v = super::AuxVec::from_static();
+        use super::*;
+
+        let v = AuxVec::from_static();
         println!("{v:#}");
+
+        let got = getauxval(Type::AT_HWCAP);
+        let want = libc::getauxval(libc::AT_HWCAP);
+        assert_eq!(got, Some(want));
     }
 }
