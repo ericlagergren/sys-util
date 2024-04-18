@@ -147,7 +147,7 @@ impl AuxVal {
                     "???".fmt(f)
                 }
             }
-            _ => self.write_val_simple(f),
+            _ => self.write_val_hex(f),
         }
     }
 
@@ -162,7 +162,7 @@ impl AuxVal {
             | Type::AT_GID
             | Type::AT_EGID
             | Type::AT_STACKPROT => self.val.fmt(f),
-            _ => self.write_val_simple(f),
+            _ => self.write_val_hex(f),
         }
     }
 
@@ -176,11 +176,11 @@ impl AuxVal {
             | Type::AT_EUID
             | Type::AT_GID
             | Type::AT_EGID => self.val.fmt(f),
-            _ => self.write_val_simple(f),
+            _ => self.write_val_hex(f),
         }
     }
 
-    fn write_val_simple(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn write_val_hex(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:#x}", self.val)
     }
 }
@@ -191,7 +191,7 @@ impl Display for AuxVal {
         if f.alternate() {
             self.write_val_alt(f)
         } else {
-            self.write_val_simple(f)
+            self.write_val_hex(f)
         }
     }
 }
