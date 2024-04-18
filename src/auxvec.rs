@@ -101,7 +101,11 @@ impl<'a> IntoIterator for &'a AuxVec {
 impl Display for AuxVec {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for value in self {
-            writeln!(f, "{value}")?;
+            if f.alternate() {
+                writeln!(f, "{value:#}")?;
+            } else {
+                writeln!(f, "{value}")?;
+            }
         }
         Ok(())
     }
