@@ -487,9 +487,16 @@ mod rt {
 #[cfg(test)]
 mod tests {
     #[test]
-    #[cfg(target_os = "linux")]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "solaris",
+    ))]
     fn it_works() {
         let v = super::AuxVec::from_static();
-        println!("{v}");
+        println!("{v:#}");
     }
 }
