@@ -183,7 +183,7 @@ impl AuxVal {
 
 impl Display for AuxVal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:<20}: ", self.key)?;
+        write!(f, "{: <20}: ", self.key)?;
         if f.alternate() {
             self.write_val_alt(f)
         } else {
