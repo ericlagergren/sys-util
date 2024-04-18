@@ -209,9 +209,13 @@ impl Type {
 impl Type {
     /// Converts the `Type` to a string.
     pub const fn to_str(self) -> &'static str {
-        self.to_str_base()
-            .unwrap_or_else(self.to_str_os())
-            .unwrap_or("???")
+        if let Some(s) = self.to_str_base() {
+            return s;
+        };
+        if let Some(s) = self.to_str_os() {
+            return s;
+        };
+        "???"
     }
 
     const fn to_str_base(self) -> Option<&'static str> {
