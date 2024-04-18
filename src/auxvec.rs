@@ -1,6 +1,9 @@
 //! ELF auxiliary vector support.
 
-use core::{fmt, slice};
+use core::{
+    fmt::{self, Display},
+    slice,
+};
 
 use cfg_if::cfg_if;
 
@@ -95,7 +98,7 @@ impl<'a> IntoIterator for &'a AuxVec {
     }
 }
 
-impl fmt::Display for AuxVec {
+impl Display for AuxVec {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for value in self {
             writeln!(f, "{value}")?;
@@ -118,17 +121,17 @@ impl AuxVal {
     #[cfg(target_os = "linux")]
     fn write_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.key {
-            Self::AT_PHENT
-            | Self::AT_PHNUM
-            | Self::AT_PAGESZ
-            | Self::AT_UID
-            | Self::AT_EUID
-            | Self::AT_GID
-            | Self::AT_EGID
-            | Self::AT_CLKTCK
-            | Self::AT_SECURE
-            | Self::AT_MINSIGSTKSZ => self.val.fmt(f),
-            Self::AT_EXECFN => {
+            Type::AT_PHENT
+            | Type::AT_PHNUM
+            | Type::AT_PAGESZ
+            | Type::AT_UID
+            | Type::AT_EUID
+            | Type::AT_GID
+            | Type::AT_EGID
+            | Type::AT_CLKTCK
+            | Type::AT_SECURE
+            | Type::AT_MINSIGSTKSZ => self.val.fmt(f),
+            Type::AT_EXECFN => {
                 let ptr = self.val as *const i8;
                 if !ptr.is_null() {
                     // SAFETY: we know that `ptr` is non-null,
@@ -147,21 +150,30 @@ impl AuxVal {
     #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
     fn write_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.key {
-            Self::AT_PHENT
-            | Self::AT_PHNUM
-            | Self::AT_PAGESZ
-            | Self::AT_UID
-            | Self::AT_EUID
-            | Self::AT_GID
-            | Self::AT_EGID
-            | Self::AT_STACKPROT => self.val.fmt(f),
+            Type::AT_PHENT
+            | Type::AT_PHNUM
+            | Type::AT_PAGESZ
+            | Type::AT_UID
+            | Type::AT_EUID
+            | Type::AT_GID
+            | Type::AT_EGID
+            | Type::AT_STACKPROT => self.val.fmt(f),
             _ => self.write_val_simple(f),
         }
     }
 
     #[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux")))]
     fn write_val_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.write_val_simple(f)
+        match self.key {
+            Type::AT_PHENT
+            | Type::AT_PHNUM
+            | Type::AT_PAGESZ
+            | Type::AT_UID
+            | Type::AT_EUID
+            | Type::AT_GID
+            | Type::AT_EGID => self.val.fmt(f),
+            _ => self.write_val_simple(f),
+        }
     }
 
     fn write_val_simple(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -169,7 +181,7 @@ impl AuxVal {
     }
 }
 
-impl fmt::Display for AuxVal {
+impl Display for AuxVal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}: ", self.key)?;
         if f.alternate() {
@@ -377,7 +389,7 @@ impl Type {
     }
 }
 
-impl fmt::Display for Type {
+impl Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(s) = self.to_str() {
             f.write_str(s)
