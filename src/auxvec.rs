@@ -23,29 +23,27 @@ pub struct AuxVec([AuxVal]);
 
 impl AuxVec {
     /// Returns the auxiliary vector from the process stack.
-    #[cfg(target_os = "linux")]
-    #[cfg_attr(docs, doc(cfg(target_os = "linux")))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "solaris",
+    ))]
+    #[cfg_attr(
+        docs,
+        doc(cfg(any(
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "linux",
+            target_os = "netbsd",
+            target_os = "solaris",
+        )))
+    )]
     pub fn from_static() -> &'static Self {
-        use core::{ptr, sync::atomic::Ordering};
-
-        use linux::{load_stack, AUXV};
-
-        let mut ptr = AUXV.load(Ordering::Relaxed);
-        if ptr.is_null() {
-            // SAFETY: `load_stack` returns a valid process
-            // stack.
-            ptr = unsafe { load_stack().find_auxv() } as _;
-
-            if let Err(got) =
-                AUXV.compare_exchange(ptr::null_mut(), ptr, Ordering::SeqCst, Ordering::Relaxed)
-            {
-                debug_assert_eq!(got, ptr);
-            };
-        }
-
-        // SAFETY: `ptr` came from `find_auxv`, which returns
+        // SAFETY: `ptr` came from `rt::auxv`, which returns
         // a suitable pointer.
-        unsafe { Self::from_ptr(ptr) }
+        unsafe { Self::from_ptr(rt::auxv()) }
     }
 
     /// Creates an `AuxVec` from a raw pointer to an auxiliary
@@ -98,7 +96,7 @@ impl<'a> IntoIterator for &'a AuxVec {
 impl fmt::Display for AuxVec {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for value in self {
-            write!(f, "{value}")?;
+            writeln!(f, "{value}")?;
         }
         Ok(())
     }
@@ -256,83 +254,84 @@ impl PartialEq<Word> for Type {
     }
 }
 
-struct Stack {
-    argc: isize,
-    argv: *const *const u8,
-    envp: *const *const u8,
-}
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "solaris",
+))]
+mod rt {
+    use core::{
+        ptr,
+        sync::atomic::{AtomicPtr, Ordering},
+    };
 
-impl Stack {
+    use super::{AuxVal, Stack};
+
+    static AUXV: AtomicPtr<AuxVal> = AtomicPtr::new(ptr::null_mut());
+
+    /// Returns a pointer to the auxiliary vector.
+    pub fn auxv() -> *const AuxVal {
+        let mut ptr = AUXV.load(Ordering::Relaxed);
+        if ptr.is_null() {
+            // SAFETY: `env` contains a valid process stack.
+            ptr = unsafe { find_auxv(envp()) } as _;
+
+            if let Err(got) =
+                AUXV.compare_exchange(ptr::null_mut(), ptr, Ordering::SeqCst, Ordering::Relaxed)
+            {
+                debug_assert_eq!(got, ptr);
+            };
+        }
+        ptr
+    }
+
     /// Finds the auxiliary vector using the process stack.
     ///
     /// # Safety
     ///
     /// The process stack must be correct.
-    unsafe fn find_auxv(&self) -> *const AuxVal {
-        let Stack { argc, argv, envp } = *self;
-
-        #[cfg(test)]
-        {
-            println!("argc = {argc}");
-            println!("argv = {argv:p}");
-            println!("envp = {envp:p}");
-        }
-
-        for i in 0..argc {
-            let ptr = *argv.offset(i);
-            if ptr.is_null() {
-                break;
-            }
-            #[cfg(test)]
-            {
-                #[allow(clippy::unwrap_used)]
-                let arg = ::core::ffi::CStr::from_ptr(ptr.cast()).to_str().unwrap();
-                println!("#{i}: {arg}");
-            }
-        }
-
-        let mut ptr = envp; // argv.offset(argc + 1);
+    unsafe fn find_auxv(envp: *const *const u8) -> *const AuxVal {
+        let mut ptr = envp;
         while !(*ptr).is_null() {
             ptr = ptr.add(1);
         }
         ptr.add(1).cast()
     }
-}
 
-#[cfg(target_os = "linux")]
-mod linux {
-    use core::{
-        ffi::c_int,
-        ptr,
-        sync::atomic::{AtomicIsize, AtomicPtr, Ordering},
-    };
+    #[cfg(target_env = "gnu")]
+    mod gnu {
+        use core::{
+            ffi::c_int,
+            ptr,
+            sync::atomic::{AtomicPtr, Ordering},
+        };
 
-    use super::{AuxVal, Stack};
+        pub fn envp() -> *const *const u8 {
+            ENVP.load(Ordering::Relaxed);
+        }
 
-    static ARGC: AtomicIsize = AtomicIsize::new(0);
-    static ARGV: AtomicPtr<*const u8> = AtomicPtr::new(ptr::null_mut());
-    static ENVP: AtomicPtr<*const u8> = AtomicPtr::new(ptr::null_mut());
+        static ENVP: AtomicPtr<*const u8> = AtomicPtr::new(ptr::null_mut());
 
-    /// Loads the process stack.
-    pub fn load_stack() -> Stack {
-        Stack {
-            argc: ARGC.load(Ordering::Relaxed),
-            argv: ARGV.load(Ordering::Relaxed),
-            envp: ENVP.load(Ordering::Relaxed),
+        #[link_section = ".init_array.00099"]
+        #[used]
+        static ARGV_INIT_ARRAY: extern "C" fn(c_int, *const *const u8, *const *const u8) = init;
+
+        extern "C" fn init(_argc: c_int, _argv: *const *const u8, envp: *const *const u8) {
+            ENVP.store(envp.cast_mut(), Ordering::Relaxed);
         }
     }
 
-    /// The auxiliary vector.
-    pub static AUXV: AtomicPtr<AuxVal> = AtomicPtr::new(ptr::null_mut());
+    #[cfg(not(target_env = "gnu"))]
+    mod other {
+        extern "C" {
+            static mut environ: *const *const c_char;
+        }
 
-    #[link_section = ".init_array.00099"]
-    #[used]
-    static ARGV_INIT_ARRAY: extern "C" fn(c_int, *const *const u8, *const *const u8) = init;
-
-    extern "C" fn init(argc: c_int, argv: *const *const u8, envp: *const *const u8) {
-        ARGC.store(argc as isize, Ordering::Relaxed);
-        ARGV.store(argv.cast_mut(), Ordering::Relaxed);
-        ENVP.store(envp.cast_mut(), Ordering::Relaxed);
+        pub fn envp() -> *const *const u8 {
+            environ
+        }
     }
 }
 
