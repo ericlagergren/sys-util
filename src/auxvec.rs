@@ -119,7 +119,7 @@ pub struct AuxVal {
 
 impl AuxVal {
     #[cfg(target_os = "linux")]
-    fn write_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn write_val_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.key {
             Type::AT_PHENT
             | Type::AT_PHNUM
@@ -148,7 +148,7 @@ impl AuxVal {
     }
 
     #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-    fn write_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn write_val_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.key {
             Type::AT_PHENT
             | Type::AT_PHNUM
