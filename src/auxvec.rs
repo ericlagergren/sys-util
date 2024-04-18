@@ -267,9 +267,17 @@ mod rt {
         sync::atomic::{AtomicPtr, Ordering},
     };
 
-    use super::{AuxVal, Stack};
+    use cfg_if::cfg_if;
 
-    static AUXV: AtomicPtr<AuxVal> = AtomicPtr::new(ptr::null_mut());
+    use super::AuxVal;
+
+    cfg_if! {
+        if #[cfg(target_env = "gnu")] {
+            use gnu::envp;
+        } else {
+            use other::envp;
+        }
+    }
 
     /// Returns a pointer to the auxiliary vector.
     pub fn auxv() -> *const AuxVal {
@@ -286,6 +294,7 @@ mod rt {
         }
         ptr
     }
+    static AUXV: AtomicPtr<AuxVal> = AtomicPtr::new(ptr::null_mut());
 
     /// Finds the auxiliary vector using the process stack.
     ///
