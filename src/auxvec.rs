@@ -1,19 +1,8 @@
 //! ELF auxiliary vector support.
 
-use core::{
-    ffi::c_int,
-    fmt, mem, ptr, slice,
-    sync::atomic::{AtomicIsize, AtomicPtr, Ordering},
-};
+use core::{fmt, slice};
 
 use cfg_if::cfg_if;
-use strum::{FromRepr, VariantArray, VariantNames};
-
-macro_rules! const_assert {
-    ($($tt:tt)*) => {
-        const _: () = assert!($($tt)*);
-    }
-}
 
 cfg_if! {
     if #[cfg(target_pointer_width = "32")] {
@@ -27,42 +16,56 @@ cfg_if! {
     }
 }
 
-static AUXV: AtomicPtr<RawAuxVal> = AtomicPtr::new(ptr::null_mut());
-
 /// The ELF auxiliary vector.
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct AuxVec([AuxVal]);
 
 impl AuxVec {
-    /// Returns the auxiliary vector for the current process.
+    /// Returns the auxiliary vector from the process stack.
+    #[cfg(target_os = "linux")]
+    #[cfg_attr(docs, doc(cfg(target_os = "linux")))]
     pub fn from_static() -> &'static Self {
-        let result = AUXV.fetch_update(Ordering::SeqCst, Ordering::Relaxed, |old| {
-            // SAFETY: `init` is called via the `.init_array`
-            // constructor.
-            let ptr = unsafe { find_auxv() } as _;
-            debug_assert!(old.is_null() || ptr == old);
-            Some(ptr)
-        });
-        let ptr = match result {
-            Ok(ptr) | Err(ptr) => ptr,
-        };
+        use core::{ptr, sync::atomic::Ordering};
+
+        use linux::{load_stack, AUXV};
+
+        let mut ptr = AUXV.load(Ordering::Relaxed);
+        if ptr.is_null() {
+            // SAFETY: `load_stack` returns a valid process
+            // stack.
+            ptr = unsafe { load_stack().find_auxv() };
+
+            let got = match AUXV.compare_exchange(
+                ptr::null_mut(),
+                ptr,
+                Ordering::SeqCst,
+                Ordering::Relaxed,
+            ) {
+                Ok(ptr) | Err(ptr) => ptr,
+            };
+            debug_assert_eq!(got, ptr);
+        }
+
         // SAFETY: `ptr` came from `find_auxv`, which returns
         // a suitable pointer.
         unsafe { Self::from_ptr(ptr) }
     }
 
+    /// Creates an `AuxVec` from a raw pointer to an auxiliary
+    /// vector.
+    ///
     /// # Safety
     ///
     /// - `ptr` must be non-null and point to a valid auxiliary
     /// vector.
-    unsafe fn from_ptr(ptr: *const RawAuxVal) -> &'static Self {
+    pub unsafe fn from_ptr(ptr: *const AuxVal) -> &'static Self {
         debug_assert!(!ptr.is_null());
 
         let mut len = 0;
         loop {
             let value = ptr.add(len);
-            if (*value).key == Type::Null.to_word() {
+            if (*value).key == Type::AT_NULL {
                 break;
             }
             len += 1;
@@ -107,6 +110,7 @@ impl fmt::Display for AuxVec {
 
 /// An auxiliary vector key-value pair.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(C)]
 pub struct AuxVal {
     /// The key.
     pub key: Type,
@@ -121,131 +125,125 @@ impl fmt::Display for AuxVal {
 }
 
 /// The type of an [`AuxVal`].
-#[derive(
-    Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd, FromRepr, VariantArray, VariantNames,
-)]
-#[cfg_attr(target_pointer_width = "32", repr(u32))]
-#[cfg_attr(target_pointer_width = "64", repr(u64))]
-#[allow(missing_docs)] // TODO
-pub enum Type {
-    /// `AT_NULL`
-    Null = 0,
-    /// `AT_IGNORE`
-    Ignore = 1,
-    /// `AT_EXECFD`
-    ExecFd = 2,
-    /// `AT_PHDR`.
-    Phdr = 3,
-    /// `AT_PHENT`.
-    Phent = 4,
-    /// `AT_PHNUM`.
-    Phnum = 5,
-    /// `AT_PAGESZ`.
-    PageSize = 6,
-    Base = 7,
-    Flags = 8,
-    Entry = 9,
-    NotElf = 10,
-    Uid = 11,
-    Euid = 12,
-    Gid = 13,
-    Egid = 14,
-    ClockTick = 17,
-    Platform = 15,
-    Hwcap = 16,
-    Fpucw = 18,
-    DataCacheBlockSize = 19,
-    InstCacheBlockSize = 20,
-    UnifiedCacheBlockSize = 21,
-    IgnorePpc = 22,
-    Secure = 23,
-    BasePlatfomr = 24,
-    Random = 25,
-    Hwcap2 = 26,
-    RseqFeatureSize = 27,
-    RseqAlign = 28,
-    HwCap3 = 29,
-    HwCap4 = 30,
-    ExecFn = 31,
-    Sysinfo = 32,
-    SysinfoEhdr = 33,
-    L1InstCacheShape = 34,
-    L1DataCacheChape = 35,
-    L2CacheShape = 36,
-    L3CacheShape = 37,
-    L1InstCacheSize = 40,
-    L1InstCacheGeometry = 41,
-    L1DCacheSize = 42,
-    L1DCacheGeometry = 43,
-    L2CacheSize = 44,
-    L2CacheGeometry = 45,
-    L3CacheSize = 46,
-    L3CacheGeometry = 47,
-    MinSigStackSize = 51,
-}
-const_assert!(mem::size_of::<Type>() == mem::size_of::<Word>());
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[repr(transparent)]
+pub struct Type(Word);
 
 impl Type {
-    /// Converts a `Word` to a `Type`.
-    pub const fn from_u64(v: Word) -> Option<Self> {
-        Self::from_repr(v)
-    }
+    const AT_NULL: Type = Type(0);
+    const AT_IGNORE: Type = Type(1);
+    const AT_EXECFD: Type = Type(2);
+    const AT_PHDR: Type = Type(3);
+    const AT_PHENT: Type = Type(4);
+    const AT_PHNUM: Type = Type(5);
+    const AT_PAGESZ: Type = Type(6);
+    const AT_BASE: Type = Type(7);
+    const AT_FLAGS: Type = Type(8);
+    const AT_ENTRY: Type = Type(9);
+    const AT_NOTELF: Type = Type(10);
+    const AT_UID: Type = Type(11);
+    const AT_EUID: Type = Type(12);
+    const AT_GID: Type = Type(13);
+    const AT_EGID: Type = Type(14);
+    const AT_CLKTCK: Type = Type(17);
 
-    /// Converts the `Type` to a `Word`.
-    pub const fn to_word(self) -> Word {
-        self as Word
-    }
+    const AT_PLATFORM: Type = Type(15);
+    const AT_HWCAP: Type = Type(16);
 
-    /// Returns the string encoding of the type.
+    const AT_FPUCW: Type = Type(18);
+
+    const AT_DCACHEBSIZE: Type = Type(19);
+    const AT_ICACHEBSIZE: Type = Type(20);
+    const AT_UCACHEBSIZE: Type = Type(21);
+
+    const AT_IGNOREPPC: Type = Type(22);
+
+    const AT_SECURE: Type = Type(23);
+
+    const AT_BASE_PLATFORM: Type = Type(24);
+
+    const AT_RANDOM: Type = Type(25);
+
+    const AT_HWCAP2: Type = Type(26);
+
+    const AT_RSEQ_FEATURE_SIZE: Type = Type(27);
+    const AT_RSEQ_ALIGN: Type = Type(28);
+
+    const AT_HWCAP3: Type = Type(29);
+    const AT_HWCAP4: Type = Type(30);
+
+    const AT_EXECFN: Type = Type(31);
+
+    const AT_SYSINFO: Type = Type(32);
+    const AT_SYSINFO_EHDR: Type = Type(33);
+
+    const AT_L1I_CACHESHAPE: Type = Type(34);
+    const AT_L1D_CACHESHAPE: Type = Type(35);
+    const AT_L2_CACHESHAPE: Type = Type(36);
+    const AT_L3_CACHESHAPE: Type = Type(37);
+
+    const AT_L1I_CACHESIZE: Type = Type(40);
+    const AT_L1I_CACHEGEOMETRY: Type = Type(41);
+    const AT_L1D_CACHESIZE: Type = Type(42);
+    const AT_L1D_CACHEGEOMETRY: Type = Type(43);
+    const AT_L2_CACHESIZE: Type = Type(44);
+    const AT_L2_CACHEGEOMETRY: Type = Type(45);
+    const AT_L3_CACHESIZE: Type = Type(46);
+    const AT_L3_CACHEGEOMETRY: Type = Type(47);
+
+    const AT_MINSIGSTKSZ: Type = Type(51);
+
+    /// Converts the `Type` to a string.
     pub const fn to_str(self) -> &'static str {
         match self {
-            Self::Null => "AT_NULL",
-            Self::Ignore => "AT_IGNORE",
-            Self::ExecFd => "AT_EXECFD",
-            Self::Phdr => "AT_PHDR",
-            Self::Phent => "AT_PHENT",
-            Self::Phnum => "AT_PHNUM",
-            Self::PageSize => "AT_PAGESZ",
-            Self::Base => "AT_BASE",
-            Self::Flags => "AT_FLAGS",
-            Self::Entry => "AT_ENTRY",
-            Self::NotElf => "AT_NOTELF",
-            Self::Uid => "AT_UID",
-            Self::Euid => "AT_EUID",
-            Self::Gid => "AT_GID",
-            Self::Egid => "AT_EGID",
-            Self::ClockTick => "AT_CLKTCK",
-            Self::Platform => "AT_PLATFORM",
-            Self::Hwcap => "AT_HWCAP",
-            Self::Fpucw => "AT_FPUCW",
-            Self::DataCacheBlockSize => "AT_DCACHEBSIZE",
-            Self::InstCacheBlockSize => "AT_ICACHEBSIZE",
-            Self::UnifiedCacheBlockSize => "AT_UCACHEBSIZE",
-            Self::IgnorePpc => "AT_IGNOREPPC",
-            Self::Secure => "AT_SECURE",
-            Self::BasePlatfomr => "AT_BASE_PLATFORM",
-            Self::Random => "AT_RANDOM",
-            Self::Hwcap2 => "AT_HWCAP2",
-            Self::RseqFeatureSize => "AT_RSEQ_FEATURE_SIZE",
-            Self::RseqAlign => "AT_RSEQ_ALIGN",
-            Self::HwCap3 => "AT_HWCAP3",
-            Self::HwCap4 => "AT_HWCAP4",
-            Self::ExecFn => "AT_EXECFN",
-            Self::Sysinfo => "AT_SYSINFO",
-            Self::SysinfoEhdr => "AT_SYSINFO_EHDR",
-            Self::L1InstCacheShape => "AT_L1I_CACHESHAPE",
-            Self::L1DataCacheChape => "AT_L1D_CACHESHAPE",
-            Self::L2CacheShape => "AT_L2_CACHESHAPE",
-            Self::L3CacheShape => "AT_L3_CACHESHAPE",
-            Self::L1InstCacheSize => "AT_L1I_CACHESIZE",
-            Self::L1InstCacheGeometry => "AT_L1I_CACHEGEOMETRY",
-            Self::L1DCacheSize => "AT_L1D_CACHESIZE",
-            Self::L1DCacheGeometry => "AT_L1D_CACHEGEOMETRY",
-            Self::L2CacheSize => "AT_L2_CACHESIZE",
-            Self::L2CacheGeometry => "AT_L2_CACHEGEOMETRY",
-            Self::L3CacheSize => "AT_L3_CACHESIZE",
-            Self::L3CacheGeometry => "AT_L3_CACHEGEOMETRY",
-            Self::MinSigStackSize => "AT_MINSIGSTKSZ",
+            Self::AT_NULL => "AT_NULL",
+            Self::AT_IGNORE => "AT_IGNORE",
+            Self::AT_EXECFD => "AT_EXECFD",
+            Self::AT_PHDR => "AT_PHDR",
+            Self::AT_PHENT => "AT_PHENT",
+            Self::AT_PHNUM => "AT_PHNUM",
+            Self::AT_PAGESZ => "AT_PAGESZ",
+            Self::AT_BASE => "AT_BASE",
+            Self::AT_FLAGS => "AT_FLAGS",
+            Self::AT_ENTRY => "AT_ENTRY",
+            Self::AT_NOTELF => "AT_NOTELF",
+            Self::AT_UID => "AT_UID",
+            Self::AT_EUID => "AT_EUID",
+            Self::AT_GID => "AT_GID",
+            Self::AT_EGID => "AT_EGID",
+            Self::AT_CLKTCK => "AT_CLKTCK",
+            Self::AT_PLATFORM => "AT_PLATFORM",
+            Self::AT_HWCAP => "AT_HWCAP",
+            Self::AT_FPUCW => "AT_FPUCW",
+            Self::AT_DCACHEBSIZE => "AT_DCACHEBSIZE",
+            Self::AT_ICACHEBSIZE => "AT_ICACHEBSIZE",
+            Self::AT_UCACHEBSIZE => "AT_UCACHEBSIZE",
+            Self::AT_IGNOREPPC => "AT_IGNOREPPC",
+            Self::AT_SECURE => "AT_SECURE",
+            Self::AT_BASE_PLATFORM => "AT_BASE_PLATFORM",
+            Self::AT_RANDOM => "AT_RANDOM",
+            Self::AT_HWCAP2 => "AT_HWCAP2",
+            Self::AT_RSEQ_FEATURE_SIZE => "AT_RSEQ_FEATURE_SIZE",
+            Self::AT_RSEQ_ALIGN => "AT_RSEQ_ALIGN",
+            Self::AT_HWCAP3 => "AT_HWCAP3",
+            Self::AT_HWCAP4 => "AT_HWCAP4",
+            Self::AT_EXECFN => "AT_EXECFN",
+            Self::AT_SYSINFO => "AT_SYSINFO",
+            Self::AT_SYSINFO_EHDR => "AT_SYSINFO_EHDR",
+            Self::AT_L1I_CACHESHAPE => "AT_L1I_CACHESHAPE",
+            Self::AT_L1D_CACHESHAPE => "AT_L1D_CACHESHAPE",
+            Self::AT_L2_CACHESHAPE => "AT_L2_CACHESHAPE",
+            Self::AT_L3_CACHESHAPE => "AT_L3_CACHESHAPE",
+            Self::AT_L1I_CACHESIZE => "AT_L1I_CACHESIZE",
+            Self::AT_L1I_CACHEGEOMETRY => "AT_L1I_CACHEGEOMETRY",
+            Self::AT_L1D_CACHESIZE => "AT_L1D_CACHESIZE",
+            Self::AT_L1D_CACHEGEOMETRY => "AT_L1D_CACHEGEOMETRY",
+            Self::AT_L2_CACHESIZE => "AT_L2_CACHESIZE",
+            Self::AT_L2_CACHEGEOMETRY => "AT_L2_CACHEGEOMETRY",
+            Self::AT_L3_CACHESIZE => "AT_L3_CACHESIZE",
+            Self::AT_L3_CACHEGEOMETRY => "AT_L3_CACHEGEOMETRY",
+            Self::AT_MINSIGSTKSZ => "AT_MINSIGSTKSZ",
+            _ => "???",
         }
     }
 }
@@ -256,68 +254,96 @@ impl fmt::Display for Type {
     }
 }
 
-/// # Safety
-///
-/// `init` must be called first.
-unsafe fn find_auxv() -> *const RawAuxVal {
-    let argc = ARGC.load(Ordering::Relaxed);
-    let argv = ARGV.load(Ordering::Relaxed);
-    let envp = ENVP.load(Ordering::Relaxed);
-
-    #[cfg(test)]
-    {
-        println!("argc = {argc}");
-        println!("argv = {argv:p}");
-        println!("envp = {envp:p}");
+impl PartialEq<Word> for Type {
+    fn eq(&self, other: &Word) -> bool {
+        PartialEq::eq(&self.0, other)
     }
+}
 
-    for i in 0..argc {
-        let ptr = *argv.offset(i);
-        if ptr.is_null() {
-            break;
-        }
+struct Stack {
+    argc: isize,
+    argv: *const *const u8,
+    envp: *const *const u8,
+}
+
+impl Stack {
+    /// Finds the auxiliary vector using the process stack.
+    ///
+    /// # Safety
+    ///
+    /// The process stack must be correct.
+    unsafe fn find_auxv(&self) -> *const AuxVal {
+        let Stack { argc, argv, envp } = *self;
+
         #[cfg(test)]
         {
-            #[allow(clippy::unwrap_used)]
-            let arg = ::core::ffi::CStr::from_ptr(ptr.cast()).to_str().unwrap();
-            println!("#{i}: {arg}");
+            println!("argc = {argc}");
+            println!("argv = {argv:p}");
+            println!("envp = {envp:p}");
+        }
+
+        for i in 0..argc {
+            let ptr = *argv.offset(i);
+            if ptr.is_null() {
+                break;
+            }
+            #[cfg(test)]
+            {
+                #[allow(clippy::unwrap_used)]
+                let arg = ::core::ffi::CStr::from_ptr(ptr.cast()).to_str().unwrap();
+                println!("#{i}: {arg}");
+            }
+        }
+
+        let mut ptr = envp; // argv.offset(argc + 1);
+        while !(*ptr).is_null() {
+            ptr = ptr.add(1);
+        }
+        ptr.add(1).cast()
+    }
+}
+
+#[cfg(target_os = "linux")]
+mod linux {
+    use core::{
+        ffi::c_int,
+        ptr,
+        sync::atomic::{AtomicIsize, AtomicPtr, Ordering},
+    };
+
+    use super::AuxVal;
+
+    static ARGC: AtomicIsize = AtomicIsize::new(0);
+    static ARGV: AtomicPtr<*const u8> = AtomicPtr::new(ptr::null_mut());
+    static ENVP: AtomicPtr<*const u8> = AtomicPtr::new(ptr::null_mut());
+
+    pub fn load_stack() -> Stack {
+        Stack {
+            argc: ARGC.load(Ordering::Relaxed),
+            argv: ARGV.load(Ordering::Relaxed),
+            envp: ENVP.load(Ordering::Relaxed),
         }
     }
 
-    let mut ptr = envp; // argv.offset(argc + 1);
-    while !(*ptr).is_null() {
-        ptr = ptr.add(1);
+    pub static AUXV: AtomicPtr<AuxVal> = AtomicPtr::new(ptr::null_mut());
+
+    #[link_section = ".init_array.00099"]
+    #[used]
+    static ARGV_INIT_ARRAY: extern "C" fn(c_int, *const *const u8, *const *const u8) = init;
+
+    extern "C" fn init(argc: c_int, argv: *const *const u8, envp: *const *const u8) {
+        ARGC.store(argc as isize, Ordering::Relaxed);
+        ARGV.store(argv.cast_mut(), Ordering::Relaxed);
+        ENVP.store(envp.cast_mut(), Ordering::Relaxed);
     }
-    ptr.add(1).cast()
-}
-
-#[repr(C)]
-struct RawAuxVal {
-    key: Word,
-    val: Word,
-}
-
-static ARGC: AtomicIsize = AtomicIsize::new(0);
-static ARGV: AtomicPtr<*const u8> = AtomicPtr::new(ptr::null_mut());
-static ENVP: AtomicPtr<*const u8> = AtomicPtr::new(ptr::null_mut());
-
-#[link_section = ".init_array.00099"]
-#[used]
-static ARGV_INIT_ARRAY: extern "C" fn(c_int, *const *const u8, *const *const u8) = init;
-
-extern "C" fn init(argc: c_int, argv: *const *const u8, envp: *const *const u8) {
-    ARGC.store(argc as isize, Ordering::Relaxed);
-    ARGV.store(argv.cast_mut(), Ordering::Relaxed);
-    ENVP.store(envp.cast_mut(), Ordering::Relaxed);
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
+    #[cfg(target_os = "linux")]
     fn it_works() {
-        let v = AuxVec::from_static();
+        let v = super::AuxVec::from_static();
         println!("{v}");
     }
 }

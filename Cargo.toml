@@ -10,4 +10,3 @@ auxvec = []
 
 [dependencies]
 cfg-if = { version = "1.0.0" }
-strum = { version = "0.26.2", default-features = false, features = ["derive"] }
