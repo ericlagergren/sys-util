@@ -318,7 +318,7 @@ mod rt {
         };
 
         pub fn envp() -> *const *const u8 {
-            ENVP.load(Ordering::Relaxed);
+            ENVP.load(Ordering::Relaxed)
         }
 
         static ENVP: AtomicPtr<*const u8> = AtomicPtr::new(ptr::null_mut());
