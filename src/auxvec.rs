@@ -311,12 +311,13 @@ mod linux {
         sync::atomic::{AtomicIsize, AtomicPtr, Ordering},
     };
 
-    use super::AuxVal;
+    use super::{AuxVal, Stack};
 
     static ARGC: AtomicIsize = AtomicIsize::new(0);
     static ARGV: AtomicPtr<*const u8> = AtomicPtr::new(ptr::null_mut());
     static ENVP: AtomicPtr<*const u8> = AtomicPtr::new(ptr::null_mut());
 
+    /// Loads the process stack.
     pub fn load_stack() -> Stack {
         Stack {
             argc: ARGC.load(Ordering::Relaxed),
@@ -325,6 +326,7 @@ mod linux {
         }
     }
 
+    /// The auxiliary vector.
     pub static AUXV: AtomicPtr<AuxVal> = AtomicPtr::new(ptr::null_mut());
 
     #[link_section = ".init_array.00099"]
