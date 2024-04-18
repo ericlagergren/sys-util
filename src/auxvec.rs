@@ -114,9 +114,69 @@ pub struct AuxVal {
     pub val: Word,
 }
 
+impl AuxVal {
+    #[cfg(target_os = "linux")]
+    fn write_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.key {
+            Self::AT_PHENT
+            | Self::AT_PHNUM
+            | Self::AT_PAGESZ
+            | Self::AT_UID
+            | Self::AT_EUID
+            | Self::AT_GID
+            | Self::AT_EGID
+            | Self::AT_CLKTCK
+            | Self::AT_SECURE
+            | Self::AT_MINSIGSTKSZ => self.val.fmt(f),
+            Self::AT_EXECFN => {
+                let ptr = self.val as *const i8;
+                if !ptr.is_null() {
+                    // SAFETY: we know that `ptr` is non-null,
+                    // but we have to trust that it is
+                    // null-terminated.
+                    let s = unsafe { core::ffi::CStr::from_ptr(ptr) };
+                    s.fmt(s)
+                } else {
+                    "???".fmt(s)
+                }
+            }
+            _ => self.write_val_simple(f),
+        }
+    }
+
+    #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+    fn write_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.key {
+            Self::AT_PHENT
+            | Self::AT_PHNUM
+            | Self::AT_PAGESZ
+            | Self::AT_UID
+            | Self::AT_EUID
+            | Self::AT_GID
+            | Self::AT_EGID
+            | Self::AT_STACKPROT => self.val.fmt(f),
+            _ => self.write_val_simple(f),
+        }
+    }
+
+    #[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux")))]
+    fn write_val_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.write_val_simple(f)
+    }
+
+    fn write_val_simple(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:#x}", self.val)
+    }
+}
+
 impl fmt::Display for AuxVal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}: {}", self.key, self.val)
+        write!(f, "{}: ", self.key)?;
+        if f.alternate() {
+            self.write_val_simple(f)
+        } else {
+            self.write_val_alt(f)
+        }
     }
 }
 
@@ -125,97 +185,98 @@ impl fmt::Display for AuxVal {
 #[repr(transparent)]
 pub struct Type(Word);
 
+#[allow(missing_docs)]
 impl Type {
-    const AT_NULL: Self = Self(0);
-    const AT_IGNORE: Self = Self(1);
-    const AT_EXECFD: Self = Self(2);
-    const AT_PHDR: Self = Self(3);
-    const AT_PHENT: Self = Self(4);
-    const AT_PHNUM: Self = Self(5);
-    const AT_PAGESZ: Self = Self(6);
-    const AT_BASE: Self = Self(7);
-    const AT_FLAGS: Self = Self(8);
-    const AT_ENTRY: Self = Self(9);
-    const AT_NOTELF: Self = Self(10);
-    const AT_UID: Self = Self(11);
-    const AT_EUID: Self = Self(12);
-    const AT_GID: Self = Self(13);
-    const AT_EGID: Self = Self(14);
-
-    const AT_HWCAP2: Self = Self(26);
+    pub const AT_NULL: Self = Self(0);
+    pub const AT_IGNORE: Self = Self(1);
+    pub const AT_EXECFD: Self = Self(2);
+    pub const AT_PHDR: Self = Self(3);
+    pub const AT_PHENT: Self = Self(4);
+    pub const AT_PHNUM: Self = Self(5);
+    pub const AT_PAGESZ: Self = Self(6);
+    pub const AT_BASE: Self = Self(7);
+    pub const AT_FLAGS: Self = Self(8);
+    pub const AT_ENTRY: Self = Self(9);
+    pub const AT_NOTELF: Self = Self(10);
+    pub const AT_UID: Self = Self(11);
+    pub const AT_EUID: Self = Self(12);
+    pub const AT_GID: Self = Self(13);
+    pub const AT_EGID: Self = Self(14);
+    pub const AT_HWCAP2: Self = Self(26);
 }
 
 #[cfg(target_os = "linux")]
+#[cfg_attr(docs, doc(cfg(target_os = "linux")))]
+#[allow(missing_docs)]
 impl Type {
-    const AT_CLKTCK: Self = Self(17);
-    const AT_PLATFORM: Self = Self(15);
-    const AT_HWCAP: Self = Self(16);
-    const AT_FPUCW: Self = Self(18);
-    const AT_DCACHEBSIZE: Self = Self(19);
-    const AT_ICACHEBSIZE: Self = Self(20);
-    const AT_UCACHEBSIZE: Self = Self(21);
-    const AT_IGNOREPPC: Self = Self(22);
-    const AT_SECURE: Self = Self(23);
-    const AT_BASE_PLATFORM: Self = Self(24);
-    const AT_RANDOM: Self = Self(25);
-    const AT_RSEQ_FEATURE_SIZE: Self = Self(27);
-    const AT_RSEQ_ALIGN: Self = Self(28);
-    const AT_HWCAP3: Self = Self(29);
-    const AT_HWCAP4: Self = Self(30);
-    const AT_EXECFN: Self = Self(31);
-    const AT_SYSINFO: Self = Self(32);
-    const AT_SYSINFO_EHDR: Self = Self(33);
-    const AT_L1I_CACHESHAPE: Self = Self(34);
-    const AT_L1D_CACHESHAPE: Self = Self(35);
-    const AT_L2_CACHESHAPE: Self = Self(36);
-    const AT_L3_CACHESHAPE: Self = Self(37);
-    const AT_L1I_CACHESIZE: Self = Self(40);
-    const AT_L1I_CACHEGEOMETRY: Self = Self(41);
-    const AT_L1D_CACHESIZE: Self = Self(42);
-    const AT_L1D_CACHEGEOMETRY: Self = Self(43);
-    const AT_L2_CACHESIZE: Self = Self(44);
-    const AT_L2_CACHEGEOMETRY: Self = Self(45);
-    const AT_L3_CACHESIZE: Self = Self(46);
-    const AT_L3_CACHEGEOMETRY: Self = Self(47);
-    const AT_MINSIGSTKSZ: Self = Self(51);
+    pub const AT_CLKTCK: Self = Self(17);
+    pub const AT_PLATFORM: Self = Self(15);
+    pub const AT_HWCAP: Self = Self(16);
+    pub const AT_FPUCW: Self = Self(18);
+    pub const AT_DCACHEBSIZE: Self = Self(19);
+    pub const AT_ICACHEBSIZE: Self = Self(20);
+    pub const AT_UCACHEBSIZE: Self = Self(21);
+    pub const AT_IGNOREPPC: Self = Self(22);
+    pub const AT_SECURE: Self = Self(23);
+    pub const AT_BASE_PLATFORM: Self = Self(24);
+    pub const AT_RANDOM: Self = Self(25);
+    pub const AT_RSEQ_FEATURE_SIZE: Self = Self(27);
+    pub const AT_RSEQ_ALIGN: Self = Self(28);
+    pub const AT_HWCAP3: Self = Self(29);
+    pub const AT_HWCAP4: Self = Self(30);
+    pub const AT_EXECFN: Self = Self(31);
+    pub const AT_SYSINFO: Self = Self(32);
+    pub const AT_SYSINFO_EHDR: Self = Self(33);
+    pub const AT_L1I_CACHESHAPE: Self = Self(34);
+    pub const AT_L1D_CACHESHAPE: Self = Self(35);
+    pub const AT_L2_CACHESHAPE: Self = Self(36);
+    pub const AT_L3_CACHESHAPE: Self = Self(37);
+    pub const AT_L1I_CACHESIZE: Self = Self(40);
+    pub const AT_L1I_CACHEGEOMETRY: Self = Self(41);
+    pub const AT_L1D_CACHESIZE: Self = Self(42);
+    pub const AT_L1D_CACHEGEOMETRY: Self = Self(43);
+    pub const AT_L2_CACHESIZE: Self = Self(44);
+    pub const AT_L2_CACHEGEOMETRY: Self = Self(45);
+    pub const AT_L3_CACHESIZE: Self = Self(46);
+    pub const AT_L3_CACHEGEOMETRY: Self = Self(47);
+    pub const AT_MINSIGSTKSZ: Self = Self(51);
 }
 
-#[cfg(target_os = "freebsd")]
+#[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+#[cfg_attr(docs, doc(cfg(any(target_os = "dragonfly", target_os = "freebsd"))))]
+#[allow(missing_docs)]
 impl Type {
-    const AT_EXECPATH: Self = Self(15);
-    const AT_CANARY: Self = Self(16);
-    const AT_CANARYLEN: Self = Self(17);
-    const AT_OSRELDATE: Self = Self(18);
-    const AT_NCPUS: Self = Self(19);
-    const AT_PAGESIZES: Self = Self(20);
-    const AT_PAGESIZESLEN: Self = Self(21);
-    const AT_TIMEKEEP: Self = Self(22);
-    const AT_STACKPROT: Self = Self(23);
-    const AT_EHDRFLAGS: Self = Self(24);
-    const AT_HWCAP: Self = Self(25);
-    const AT_BSDFLAGS: Self = Self(27);
-    const AT_ARGC: Self = Self(28);
-    const AT_ARGV: Self = Self(29);
-    const AT_ENVC: Self = Self(30);
-    const AT_ENVV: Self = Self(31);
-    const AT_PS_STRINGS: Self = Self(32);
-    const AT_FXRNG: Self = Self(33);
-    const AT_KPRELOAD: Self = Self(34);
-    const AT_USRSTACKBASE: Self = Self(35);
-    const AT_USRSTACKLIM: Self = Self(36);
-    const AT_COUNT: Self = Self(37);
+    pub const AT_EXECPATH: Self = Self(15);
+    pub const AT_CANARY: Self = Self(16);
+    pub const AT_CANARYLEN: Self = Self(17);
+    pub const AT_OSRELDATE: Self = Self(18);
+    pub const AT_NCPUS: Self = Self(19);
+    pub const AT_PAGESIZES: Self = Self(20);
+    pub const AT_PAGESIZESLEN: Self = Self(21);
+    pub const AT_TIMEKEEP: Self = Self(22);
+    pub const AT_STACKPROT: Self = Self(23);
+    pub const AT_EHDRFLAGS: Self = Self(24);
+    pub const AT_HWCAP: Self = Self(25);
+    pub const AT_BSDFLAGS: Self = Self(27);
+    pub const AT_ARGC: Self = Self(28);
+    pub const AT_ARGV: Self = Self(29);
+    pub const AT_ENVC: Self = Self(30);
+    pub const AT_ENVV: Self = Self(31);
+    pub const AT_PS_STRINGS: Self = Self(32);
+    pub const AT_FXRNG: Self = Self(33);
+    pub const AT_KPRELOAD: Self = Self(34);
+    pub const AT_USRSTACKBASE: Self = Self(35);
+    pub const AT_USRSTACKLIM: Self = Self(36);
+    pub const AT_COUNT: Self = Self(37);
 }
 
 impl Type {
     /// Converts the `Type` to a string.
-    pub const fn to_str(self) -> &'static str {
+    pub const fn to_str(self) -> Option<&'static str> {
         if let Some(s) = self.to_str_base() {
-            return s;
+            return Some(s);
         };
-        if let Some(s) = self.to_str_os() {
-            return s;
-        };
-        "???"
+        self.to_str_os()
     }
 
     const fn to_str_base(self) -> Option<&'static str> {
@@ -280,7 +341,7 @@ impl Type {
         Some(s)
     }
 
-    #[cfg(target_os = "freebsd")]
+    #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
     const fn to_str_os(self) -> Option<&'static str> {
         let s = match self {
             Self::AT_EXECPATH => "AT_EXECPATH",
@@ -310,7 +371,7 @@ impl Type {
         Some(s)
     }
 
-    #[cfg(not(any(target_os = "freebsd", target_os = "linux")))]
+    #[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux")))]
     const fn to_str_os(self) -> Option<&'static str> {
         None
     }
@@ -318,7 +379,11 @@ impl Type {
 
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.to_str())
+        if let Some(s) = self.to_str() {
+            f.write_str(s)
+        } else {
+            write!(f, "Type({})", self.0)
+        }
     }
 }
 
