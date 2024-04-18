@@ -553,7 +553,8 @@ mod tests {
         println!("{v:#}");
 
         let got = getauxval(Type::AT_HWCAP);
-        let want = libc::getauxval(libc::AT_HWCAP);
+        // SAFETY: FFI call, no invariants.
+        let want = unsafe { libc::getauxval(libc::AT_HWCAP) };
         assert_eq!(got, Some(want));
     }
 }
