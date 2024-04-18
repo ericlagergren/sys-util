@@ -34,17 +34,13 @@ impl AuxVec {
         if ptr.is_null() {
             // SAFETY: `load_stack` returns a valid process
             // stack.
-            ptr = unsafe { load_stack().find_auxv() };
+            ptr = unsafe { load_stack().find_auxv() } as _;
 
-            let got = match AUXV.compare_exchange(
-                ptr::null_mut(),
-                ptr,
-                Ordering::SeqCst,
-                Ordering::Relaxed,
-            ) {
-                Ok(ptr) | Err(ptr) => ptr,
+            if let Err(got) =
+                AUXV.compare_exchange(ptr::null_mut(), ptr, Ordering::SeqCst, Ordering::Relaxed)
+            {
+                debug_assert_eq!(got, ptr);
             };
-            debug_assert_eq!(got, ptr);
         }
 
         // SAFETY: `ptr` came from `find_auxv`, which returns
