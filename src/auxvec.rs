@@ -183,7 +183,7 @@ impl AuxVal {
 
 impl Display for AuxVal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{: <20}: ", self.key)?;
+        write!(f, "{:<20}: ", self.key)?;
         if f.alternate() {
             self.write_val_alt(f)
         } else {
@@ -392,7 +392,7 @@ impl Type {
 impl Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(s) = self.to_str() {
-            f.write_str(s)
+            s.fmt(f)
         } else {
             write!(f, "Type({})", self.0)
         }
@@ -510,6 +510,5 @@ mod tests {
     fn it_works() {
         let v = super::AuxVec::from_static();
         println!("{v:#}");
-        println!("{v:?}");
     }
 }
