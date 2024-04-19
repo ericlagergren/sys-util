@@ -527,14 +527,15 @@ mod rt {
 
     #[cfg(not(target_env = "gnu"))]
     mod other {
-        use core::ffi::c_char;
+        use core::{ffi::c_char, ptr};
 
         extern "C" {
             static mut environ: *const *const c_char;
         }
 
         pub fn envp() -> *const *const u8 {
-            environ.cast()
+            let ptr = unsafe { ptr::addr_of_mut!(environ) };
+            ptr.cast()
         }
     }
 }
@@ -559,7 +560,7 @@ mod tests {
 
     #[test]
     fn test_libc_compat() {
-        use core::ffi::u_long;
+        use core::ffi::c_ulong;
 
         #[cfg(target_os = "linux")]
         fn sys_getauxval(type_: c_ulong) -> c_ulong {
@@ -567,10 +568,10 @@ mod tests {
         }
 
         #[cfg(target_os = "freebsd")]
-        fn sys_getauxval(type_: c_ulont) -> c_ulong {
+        fn sys_getauxval(type_: c_ulong) -> c_ulong {
             use core::{ffi::c_int, ptr};
 
-            let mut out = 0c_ulong;
+            let mut out: c_ulong = 0;
             let ret = libc::elf_aux_info(
                 type_ as c_int,
                 ptr::addr_of_mut!(out) as _,
