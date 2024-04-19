@@ -1,5 +1,7 @@
 //! ELF auxiliary vector support.
 
+// TODO: /proc/self/auxv
+
 use core::{
     fmt::{self, Display},
     slice,
@@ -525,6 +527,8 @@ mod rt {
 
     #[cfg(not(target_env = "gnu"))]
     mod other {
+        use core::ffi::c_char;
+
         extern "C" {
             static mut environ: *const *const c_char;
         }
@@ -535,23 +539,26 @@ mod rt {
     }
 }
 
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "illumos",
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "solaris",
+))]
 #[cfg(test)]
 mod tests {
-    #[test]
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "illumos",
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "solaris",
-    ))]
-    fn it_works() {
-        use super::*;
+    use super::*;
 
+    #[test]
+    fn it_works() {
         let v = AuxVec::from_static();
         println!("{v:#}");
+    }
 
+    #[test]
+    fn test_libc_compat() {
         let got = getauxval(Type::AT_HWCAP);
         // SAFETY: FFI call, no invariants.
         let want = unsafe { libc::getauxval(libc::AT_HWCAP) };
