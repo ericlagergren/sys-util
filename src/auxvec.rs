@@ -540,15 +540,17 @@ mod rt {
     }
 }
 
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "illumos",
-    target_os = "linux",
-    target_os = "netbsd",
-    target_os = "solaris",
+#[cfg(all(
+    test,
+    any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "illumos",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "solaris",
+    )
 ))]
-#[cfg(test)]
 mod tests {
     use super::*;
 
