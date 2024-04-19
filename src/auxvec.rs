@@ -592,6 +592,8 @@ mod tests {
 
         let got = getauxval(Type::AT_PHDR);
         let want = sys_getauxval(libc::AT_PHDR);
+        println!(" got = {got:?}");
+        println!("want = {want:}");
         assert_eq!(got, Some(want));
     }
 }
