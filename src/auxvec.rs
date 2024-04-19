@@ -569,14 +569,14 @@ mod tests {
         }
 
         #[cfg(target_os = "freebsd")]
-        fn sys_getauxval(type_: c_ulong) -> c_ulong {
-            use core::{ffi::c_int, mem, ptr};
+        fn sys_getauxval(type_: core::ffi::c_int) -> c_ulong {
+            use core::{mem, ptr};
 
             let mut out: c_ulong = 0;
             // SAFETY: FFI call, no invariants.
             let ret = unsafe {
                 libc::elf_aux_info(
-                    type_ as c_int,
+                    type_,
                     ptr::addr_of_mut!(out) as _,
                     mem::size_of_val(&out) as c_int,
                 )
