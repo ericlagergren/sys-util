@@ -465,7 +465,7 @@ mod rt {
     use super::AuxVal;
 
     cfg_if! {
-        if #[cfg(any(target_os = "freebsd", target_os = "linux"))] {
+        if #[cfg(any(target_os = "freebsd", target_env = "gnu"))] {
             use init_array::envp;
         } else {
             use other::envp;
@@ -502,7 +502,7 @@ mod rt {
         ptr.add(1).cast()
     }
 
-    #[cfg(any(target_os = "freebsd", target_os = "linux"))]
+    #[cfg(any(target_os = "freebsd", target_env = "gnu"))]
     mod init_array {
         use core::{
             ffi::c_int,
@@ -525,7 +525,7 @@ mod rt {
         }
     }
 
-    #[cfg(not(any(target_os = "freebsd", target_os = "linux")))]
+    #[cfg(not(any(target_os = "freebsd", target_env = "gnu")))]
     mod other {
         use core::{ffi::c_char, ptr};
 
@@ -534,8 +534,8 @@ mod rt {
         }
 
         pub fn envp() -> *const *const u8 {
-            let ptr = unsafe { ptr::addr_of_mut!(environ) };
-            (*ptr).cast()
+            let ptr = unsafe { *ptr::addr_of_mut!(environ) };
+            ptr.cast()
         }
     }
 }
@@ -554,11 +554,11 @@ mod rt {
 mod tests {
     use super::*;
 
-    #[test]
-    fn it_works() {
-        let v = AuxVec::from_static();
-        println!("{v:#}");
-    }
+    // #[test]
+    // fn it_works() {
+    //     let v = AuxVec::from_static();
+    //     println!("{v:#}");
+    // }
 
     #[test]
     fn test_libc_compat() {
@@ -589,6 +589,9 @@ mod tests {
                 out
             }
         }
+
+        let v = AuxVec::from_static();
+        println!("{v:#}");
 
         let got = getauxval(Type::AT_PHDR);
         let want = sys_getauxval(libc::AT_PHDR);
