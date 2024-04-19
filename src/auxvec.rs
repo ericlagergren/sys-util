@@ -465,8 +465,8 @@ mod rt {
     use super::AuxVal;
 
     cfg_if! {
-        if #[cfg(target_env = "gnu")] {
-            use gnu::envp;
+        if #[cfg(any(target_os = "freebsd", target_os = "linux"))] {
+            use init_array::envp;
         } else {
             use other::envp;
         }
@@ -502,8 +502,8 @@ mod rt {
         ptr.add(1).cast()
     }
 
-    #[cfg(target_env = "gnu")]
-    mod gnu {
+    #[cfg(any(target_os = "freebsd", target_os = "linux"))]
+    mod init_array {
         use core::{
             ffi::c_int,
             ptr,
@@ -525,7 +525,7 @@ mod rt {
         }
     }
 
-    #[cfg(not(target_env = "gnu"))]
+    #[cfg(not(any(target_os = "freebsd", target_os = "linux")))]
     mod other {
         use core::{ffi::c_char, ptr};
 
@@ -535,7 +535,7 @@ mod rt {
 
         pub fn envp() -> *const *const u8 {
             let ptr = unsafe { ptr::addr_of_mut!(environ) };
-            ptr.cast()
+            (*ptr).cast()
         }
     }
 }
