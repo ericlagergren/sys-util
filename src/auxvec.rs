@@ -593,6 +593,7 @@ mod tests {
         let v = AuxVec::from_static();
         println!("{v:#}");
 
+        println!("AT_HWCAP = {}", libc::AT_HWCAP);
         let got = getauxval(Type::AT_HWCAP);
         let want = sys_getauxval(libc::AT_HWCAP);
         println!(" got = {got:?}");
