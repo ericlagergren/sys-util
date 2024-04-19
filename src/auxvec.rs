@@ -564,19 +564,23 @@ mod tests {
 
         #[cfg(target_os = "linux")]
         fn sys_getauxval(type_: c_ulong) -> c_ulong {
-            libc::getauxval(type_)
+            // SAFETY: FFI call, no invariants.
+            unsafe { libc::getauxval(type_) }
         }
 
         #[cfg(target_os = "freebsd")]
         fn sys_getauxval(type_: c_ulong) -> c_ulong {
-            use core::{ffi::c_int, ptr};
+            use core::{ffi::c_int, mem, ptr};
 
             let mut out: c_ulong = 0;
-            let ret = libc::elf_aux_info(
-                type_ as c_int,
-                ptr::addr_of_mut!(out) as _,
-                mem::size_of_val(&out) as c_int,
-            );
+            // SAFETY: FFI call, no invariants.
+            let ret = unsafe {
+                libc::elf_aux_info(
+                    type_ as c_int,
+                    ptr::addr_of_mut!(out) as _,
+                    mem::size_of_val(&out) as c_int,
+                )
+            };
             if ret != 0 {
                 0
             } else {
@@ -585,8 +589,7 @@ mod tests {
         }
 
         let got = getauxval(Type::AT_HWCAP);
-        // SAFETY: FFI call, no invariants.
-        let want = unsafe { libc::getauxval(libc::AT_HWCAP) };
+        let want = sys_getauxval(libc::AT_HWCAP);
         assert_eq!(got, Some(want));
     }
 }
