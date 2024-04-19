@@ -603,7 +603,7 @@ mod tests {
         let got = getauxval(Type::AT_HWCAP);
         let want = sys_getauxval(libc::AT_HWCAP);
         println!(" got = {got:?}");
-        println!("want = {want:}");
-        assert_eq!(got, Some(want));
+        println!("want = {want:?}");
+        assert_eq!(got, want);
     }
 }
