@@ -565,13 +565,18 @@ mod tests {
         use core::ffi::{c_int, c_ulong};
 
         #[cfg(target_os = "linux")]
-        fn sys_getauxval(type_: c_ulong) -> c_ulong {
+        fn sys_getauxval(type_: c_ulong) -> Option<c_ulong> {
             // SAFETY: FFI call, no invariants.
-            unsafe { libc::getauxval(type_) }
+            let value = unsafe { libc::getauxval(type_) };
+            if libc::errno() == libc::ENOENT {
+                None
+            } else {
+                Some(value)
+            }
         }
 
         #[cfg(target_os = "freebsd")]
-        fn sys_getauxval(type_: c_int) -> c_ulong {
+        fn sys_getauxval(type_: c_int) -> Option<c_ulong> {
             use core::{mem, ptr};
 
             let mut out: c_ulong = 0;
@@ -584,9 +589,9 @@ mod tests {
                 )
             };
             if ret != 0 {
-                0
+                None
             } else {
-                out
+                Some(out)
             }
         }
 
