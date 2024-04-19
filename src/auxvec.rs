@@ -534,7 +534,7 @@ mod rt {
         }
 
         pub fn envp() -> *const *const u8 {
-            environ
+            environ.cast()
         }
     }
 }
@@ -559,6 +559,30 @@ mod tests {
 
     #[test]
     fn test_libc_compat() {
+        use core::ffi::u_long;
+
+        #[cfg(target_os = "linux")]
+        fn sys_getauxval(type_: c_ulong) -> c_ulong {
+            libc::getauxval(type_)
+        }
+
+        #[cfg(target_os = "freebsd")]
+        fn sys_getauxval(type_: c_ulont) -> c_ulong {
+            use core::{ffi::c_int, ptr};
+
+            let mut out = 0c_ulong;
+            let ret = libc::elf_aux_info(
+                type_ as c_int,
+                ptr::addr_of_mut!(out) as _,
+                mem::size_of_val(&out) as c_int,
+            );
+            if ret != 0 {
+                0
+            } else {
+                out
+            }
+        }
+
         let got = getauxval(Type::AT_HWCAP);
         // SAFETY: FFI call, no invariants.
         let want = unsafe { libc::getauxval(libc::AT_HWCAP) };
