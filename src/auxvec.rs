@@ -560,7 +560,7 @@ mod tests {
 
     #[test]
     fn test_libc_compat() {
-        use core::ffi::c_ulong;
+        use core::ffi::{c_int, c_ulong};
 
         #[cfg(target_os = "linux")]
         fn sys_getauxval(type_: c_ulong) -> c_ulong {
@@ -569,7 +569,7 @@ mod tests {
         }
 
         #[cfg(target_os = "freebsd")]
-        fn sys_getauxval(type_: core::ffi::c_int) -> c_ulong {
+        fn sys_getauxval(type_: c_int) -> c_ulong {
             use core::{mem, ptr};
 
             let mut out: c_ulong = 0;
