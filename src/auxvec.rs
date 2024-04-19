@@ -593,8 +593,8 @@ mod tests {
         let v = AuxVec::from_static();
         println!("{v:#}");
 
-        let got = getauxval(Type::AT_PHDR);
-        let want = sys_getauxval(libc::AT_PHDR);
+        let got = getauxval(Type::AT_HWCAP);
+        let want = sys_getauxval(libc::AT_HWCAP);
         println!(" got = {got:?}");
         println!("want = {want:}");
         assert_eq!(got, Some(want));
