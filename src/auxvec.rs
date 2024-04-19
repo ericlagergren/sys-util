@@ -525,7 +525,7 @@ mod rt {
         }
     }
 
-    #[cfg(not(any(target_os = "freebsd", target_env = "gnu")))]
+    //#[cfg(not(any(target_os = "freebsd", target_env = "gnu")))]
     mod other {
         use core::{ffi::c_char, ptr};
 
@@ -553,12 +553,6 @@ mod rt {
 ))]
 mod tests {
     use super::*;
-
-    // #[test]
-    // fn it_works() {
-    //     let v = AuxVec::from_static();
-    //     println!("{v:#}");
-    // }
 
     #[test]
     fn test_libc_compat() {
