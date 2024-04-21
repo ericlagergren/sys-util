@@ -576,14 +576,15 @@ mod rt {
         if let Some(envp) = init_array::envp() {
             return envp;
         }
-
-        extern "C" {
-            static mut environ: *const *const c_char;
-        }
-        // SAFETY: we just took the address of `environ`.
-        let ptr = unsafe { *ptr::addr_of_mut!(environ) };
-        ptr.cast()
+        ENVIRON.load(Ordering::Relaxed).cast()
     }
+
+    extern "C" {
+        static mut environ: *const *const c_char;
+    }
+    static ENVIRON: AtomicPtr<*const *const c_char> =
+        // SAFETY: we just took the address of `environ`.
+        AtomicPtr::new(unsafe { *ptr::addr_of_mut!(environ) });
 
     #[cfg(any(target_os = "freebsd", target_env = "gnu"))]
     mod init_array {
