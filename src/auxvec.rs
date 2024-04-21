@@ -283,22 +283,6 @@ impl Type {
     /// `AT_CLKTCK`.
     pub const AT_CLKTCK: Self = Self(17);
 
-    /// `AT_FPUCW`.
-    #[cfg(feature = "esoteric")]
-    pub const AT_FPUCW: Self = Self(18);
-    /// `AT_DCACHEBSIZE`.
-    #[cfg(feature = "esoteric")]
-    pub const AT_DCACHEBSIZE: Self = Self(19);
-    /// `AT_ICACHEBSIZE`.
-    #[cfg(feature = "esoteric")]
-    pub const AT_ICACHEBSIZE: Self = Self(20);
-    /// `AT_UCACHEBSIZE`.
-    #[cfg(feature = "esoteric")]
-    pub const AT_UCACHEBSIZE: Self = Self(21);
-    /// `AT_IGNOREPPC`.
-    #[cfg(feature = "esoteric")]
-    pub const AT_IGNOREPPC: Self = Self(22);
-
     /// `AT_SECURE`.
     pub const AT_SECURE: Self = Self(23);
     /// `AT_BASE_PLATFORM`.
@@ -345,6 +329,21 @@ impl Type {
     pub const AT_L3_CACHEGEOMETRY: Self = Self(47);
     /// `AT_MINSIGSTKSZ`.
     pub const AT_MINSIGSTKSZ: Self = Self(51);
+}
+
+#[cfg(all(target_os = "linux", target_arch = "powerpc"))]
+#[cfg_attr(docs, doc(cfg(all(target_os = "linux", target_arch = "powerpc"))))]
+impl Type {
+    /// `AT_FPUCW`.
+    pub const AT_FPUCW: Self = Self(18);
+    /// `AT_DCACHEBSIZE`.
+    pub const AT_DCACHEBSIZE: Self = Self(19);
+    /// `AT_ICACHEBSIZE`.
+    pub const AT_ICACHEBSIZE: Self = Self(20);
+    /// `AT_UCACHEBSIZE`.
+    pub const AT_UCACHEBSIZE: Self = Self(21);
+    /// `AT_IGNOREPPC`.
+    pub const AT_IGNOREPPC: Self = Self(22);
 }
 
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
@@ -745,16 +744,12 @@ mod tests {
             (Type::AT_PLATFORM, libc::AT_PLATFORM),
             (Type::AT_HWCAP, libc::AT_HWCAP),
             (Type::AT_CLKTCK, libc::AT_CLKTCK),
-            #[cfg(feature = "esoteric")]
-            (Type::AT_FPUCW, libc::AT_FPUCW),
-            #[cfg(feature = "esoteric")]
-            (Type::AT_DCACHEBSIZE, libc::AT_DCACHEBSIZE),
-            #[cfg(feature = "esoteric")]
-            (Type::AT_ICACHEBSIZE, libc::AT_ICACHEBSIZE),
-            #[cfg(feature = "esoteric")]
-            (Type::AT_UCACHEBSIZE, libc::AT_UCACHEBSIZE),
-            #[cfg(feature = "esoteric")]
-            (Type::AT_IGNOREPPC, libc::AT_IGNOREPPC),
+            // Currently not included in `libc`.
+            // (Type::AT_FPUCW, libc::AT_FPUCW),
+            // (Type::AT_DCACHEBSIZE, libc::AT_DCACHEBSIZE),
+            // (Type::AT_ICACHEBSIZE, libc::AT_ICACHEBSIZE),
+            // (Type::AT_UCACHEBSIZE, libc::AT_UCACHEBSIZE),
+            // (Type::AT_IGNOREPPC, libc::AT_IGNOREPPC),
             (Type::AT_SECURE, libc::AT_SECURE),
             (Type::AT_BASE_PLATFORM, libc::AT_BASE_PLATFORM),
             (Type::AT_RANDOM, libc::AT_RANDOM),
@@ -765,19 +760,20 @@ mod tests {
             (Type::AT_EXECFN, libc::AT_EXECFN),
             (Type::AT_SYSINFO, libc::AT_SYSINFO),
             (Type::AT_SYSINFO_EHDR, libc::AT_SYSINFO_EHDR),
-            (Type::AT_L1I_CACHESHAPE, libc::AT_L1I_CACHESHAPE),
-            (Type::AT_L1D_CACHESHAPE, libc::AT_L1D_CACHESHAPE),
-            (Type::AT_L2_CACHESHAPE, libc::AT_L2_CACHESHAPE),
-            (Type::AT_L3_CACHESHAPE, libc::AT_L3_CACHESHAPE),
-            (Type::AT_L1I_CACHESIZE, libc::AT_L1I_CACHESIZE),
-            (Type::AT_L1I_CACHEGEOMETRY, libc::AT_L1I_CACHEGEOMETRY),
-            (Type::AT_L1D_CACHESIZE, libc::AT_L1D_CACHESIZE),
-            (Type::AT_L1D_CACHEGEOMETRY, libc::AT_L1D_CACHEGEOMETRY),
-            (Type::AT_L2_CACHESIZE, libc::AT_L2_CACHESIZE),
-            (Type::AT_L2_CACHEGEOMETRY, libc::AT_L2_CACHEGEOMETRY),
-            (Type::AT_L3_CACHESIZE, libc::AT_L3_CACHESIZE),
-            (Type::AT_L3_CACHEGEOMETRY, libc::AT_L3_CACHEGEOMETRY),
-            (Type::AT_MINSIGSTKSZ, libc::AT_MINSIGSTKSZ),
+            // Currently not included in `libc`.
+            // (Type::AT_L1I_CACHESHAPE, libc::AT_L1I_CACHESHAPE),
+            // (Type::AT_L1D_CACHESHAPE, libc::AT_L1D_CACHESHAPE),
+            // (Type::AT_L2_CACHESHAPE, libc::AT_L2_CACHESHAPE),
+            // (Type::AT_L3_CACHESHAPE, libc::AT_L3_CACHESHAPE),
+            // (Type::AT_L1I_CACHESIZE, libc::AT_L1I_CACHESIZE),
+            // (Type::AT_L1I_CACHEGEOMETRY, libc::AT_L1I_CACHEGEOMETRY),
+            // (Type::AT_L1D_CACHESIZE, libc::AT_L1D_CACHESIZE),
+            // (Type::AT_L1D_CACHEGEOMETRY, libc::AT_L1D_CACHEGEOMETRY),
+            // (Type::AT_L2_CACHESIZE, libc::AT_L2_CACHESIZE),
+            // (Type::AT_L2_CACHEGEOMETRY, libc::AT_L2_CACHEGEOMETRY),
+            // (Type::AT_L3_CACHESIZE, libc::AT_L3_CACHESIZE),
+            // (Type::AT_L3_CACHEGEOMETRY, libc::AT_L3_CACHEGEOMETRY),
+            // (Type::AT_MINSIGSTKSZ, libc::AT_MINSIGSTKSZ),
         ];
         for (got, want) in types {
             assert_eq!(got.0, want as Word);
