@@ -262,14 +262,21 @@ impl Type {
 #[cfg_attr(docs, doc(cfg(target_os = "linux")))]
 #[allow(missing_docs)]
 impl Type {
-    pub const AT_CLKTCK: Self = Self(17);
     pub const AT_PLATFORM: Self = Self(15);
     pub const AT_HWCAP: Self = Self(16);
+    pub const AT_CLKTCK: Self = Self(17);
+
+    #[cfg(feature = "esoteric")]
     pub const AT_FPUCW: Self = Self(18);
+    #[cfg(feature = "esoteric")]
     pub const AT_DCACHEBSIZE: Self = Self(19);
+    #[cfg(feature = "esoteric")]
     pub const AT_ICACHEBSIZE: Self = Self(20);
+    #[cfg(feature = "esoteric")]
     pub const AT_UCACHEBSIZE: Self = Self(21);
+    #[cfg(feature = "esoteric")]
     pub const AT_IGNOREPPC: Self = Self(22);
+
     pub const AT_SECURE: Self = Self(23);
     pub const AT_BASE_PLATFORM: Self = Self(24);
     pub const AT_RANDOM: Self = Self(25);
@@ -664,13 +671,18 @@ mod tests {
     #[test]
     fn test_libc_at_types_linux() {
         let types = [
-            (Type::AT_CLKTCK, libc::AT_CLKTCK),
             (Type::AT_PLATFORM, libc::AT_PLATFORM),
             (Type::AT_HWCAP, libc::AT_HWCAP),
+            (Type::AT_CLKTCK, libc::AT_CLKTCK),
+            #[cfg(feature = "esoteric")]
             (Type::AT_FPUCW, libc::AT_FPUCW),
+            #[cfg(feature = "esoteric")]
             (Type::AT_DCACHEBSIZE, libc::AT_DCACHEBSIZE),
+            #[cfg(feature = "esoteric")]
             (Type::AT_ICACHEBSIZE, libc::AT_ICACHEBSIZE),
+            #[cfg(feature = "esoteric")]
             (Type::AT_UCACHEBSIZE, libc::AT_UCACHEBSIZE),
+            #[cfg(feature = "esoteric")]
             (Type::AT_IGNOREPPC, libc::AT_IGNOREPPC),
             (Type::AT_SECURE, libc::AT_SECURE),
             (Type::AT_BASE_PLATFORM, libc::AT_BASE_PLATFORM),
