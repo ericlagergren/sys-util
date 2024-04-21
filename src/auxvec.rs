@@ -514,7 +514,7 @@ mod rt {
         use core::{
             ffi::c_int,
             ptr,
-            sync::atomic::{AtomicPtr, Ordering},
+            sync::atomic::{AtomicBool, AtomicPtr, Ordering},
         };
 
         pub fn envp() -> Option<*const *const u8> {
