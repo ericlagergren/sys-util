@@ -559,7 +559,9 @@ mod tests {
         fn sys_getauxval(type_: c_ulong) -> Option<c_ulong> {
             // SAFETY: FFI call, no invariants.
             let value = unsafe { libc::getauxval(type_) };
-            if libc::errno() == libc::ENOENT {
+            // SAFETY: FFI call, no invariants.
+            let errno = unsafe { *libc::__errno_location() };
+            if errno == libc::ENOENT {
                 None
             } else {
                 Some(value)
