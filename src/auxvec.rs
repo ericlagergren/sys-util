@@ -456,6 +456,7 @@ impl PartialEq<Word> for Type {
 ))]
 mod rt {
     use core::{
+        ffi::c_char,
         ptr,
         sync::atomic::{AtomicPtr, Ordering},
     };
@@ -463,14 +464,6 @@ mod rt {
     use cfg_if::cfg_if;
 
     use super::AuxVal;
-
-    cfg_if! {
-        if #[cfg(any(target_os = "freebsd", target_env = "gnu"))] {
-            use init_array::envp;
-        } else {
-            use other::envp;
-        }
-    }
 
     /// Returns a pointer to the auxiliary vector.
     pub fn auxv() -> *const AuxVal {
@@ -502,6 +495,20 @@ mod rt {
         ptr.add(1).cast()
     }
 
+    fn envp() -> *const *const u8 {
+        #[cfg(any(target_os = "freebsd", target_env = "gnu"))]
+        if let Some(envp) = init_array.envp() {
+            return envp;
+        }
+
+        extern "C" {
+            static mut environ: *const *const c_char;
+        }
+        // SAFETY: we just took the address of `environ`.
+        let ptr = unsafe { *ptr::addr_of_mut!(environ) };
+        ptr.cast()
+    }
+
     #[cfg(any(target_os = "freebsd", target_env = "gnu"))]
     mod init_array {
         use core::{
@@ -510,10 +517,14 @@ mod rt {
             sync::atomic::{AtomicPtr, Ordering},
         };
 
-        pub fn envp() -> *const *const u8 {
-            ENVP.load(Ordering::Relaxed)
+        pub fn envp() -> Option<*const *const u8> {
+            if INIT.load(Ordering::Relaxed) {
+                Some(ENVP.load(Ordering::Relaxed))
+            }
+            None
         }
 
+        static INIT: AtomicBool = AtomicBool::new(false);
         static ENVP: AtomicPtr<*const u8> = AtomicPtr::new(ptr::null_mut());
 
         #[link_section = ".init_array.00099"]
@@ -522,20 +533,7 @@ mod rt {
 
         extern "C" fn init(_argc: c_int, _argv: *const *const u8, envp: *const *const u8) {
             ENVP.store(envp.cast_mut(), Ordering::Relaxed);
-        }
-    }
-
-    //#[cfg(not(any(target_os = "freebsd", target_env = "gnu")))]
-    mod other {
-        use core::{ffi::c_char, ptr};
-
-        extern "C" {
-            static mut environ: *const *const c_char;
-        }
-
-        pub fn envp() -> *const *const u8 {
-            let ptr = unsafe { *ptr::addr_of_mut!(environ) };
-            ptr.cast()
+            INIT.store(true, Ordering::Relaxed);
         }
     }
 }
