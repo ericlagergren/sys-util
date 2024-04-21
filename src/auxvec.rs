@@ -586,7 +586,7 @@ mod rt {
     }
     static ENVIRON: AtomicPtr<*const *const c_char> =
         // SAFETY: we just took the address of `environ`.
-        AtomicPtr::new(unsafe { ptr::addr_of!(environ) });
+        AtomicPtr::new(unsafe { ptr::addr_of!(environ).cast() });
 
     #[cfg(any(target_os = "freebsd", target_env = "gnu"))]
     mod init_array {
