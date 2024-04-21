@@ -578,7 +578,7 @@ mod rt {
         }
         // SAFETY: we just took the address of `environ`.
         let ptr = unsafe { *ENVIRON.load(Ordering::Relaxed) };
-        *ptr.cast()
+        ptr.cast()
     }
 
     extern "C" {
