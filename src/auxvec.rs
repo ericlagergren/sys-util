@@ -48,7 +48,7 @@ pub fn getauxval(key: Type) -> Option<Word> {
 
     let aux = AuxVec::from_static();
     for v in aux {
-        println!("v={v:#}")?;
+        println!("v={v:#}");
         if v.key == key {
             return Some(v.val);
         }
