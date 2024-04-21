@@ -561,13 +561,14 @@ mod tests {
         fn sys_getauxval(type_: c_ulong) -> Option<c_ulong> {
             // SAFETY: FFI call, no invariants.
             let value = unsafe { libc::getauxval(type_) };
-            // SAFETY: FFI call, no invariants.
-            let errno = unsafe { *libc::__errno_location() };
-            if errno == libc::ENOENT {
-                None
-            } else {
-                Some(value)
+            if value == 0 {
+                // SAFETY: FFI call, no invariants.
+                let errno = unsafe { *libc::__errno_location() };
+                if errno == libc::ENOENT {
+                    return None;
+                }
             }
+            Some(value)
         }
 
         #[cfg(target_os = "freebsd")]
@@ -600,5 +601,30 @@ mod tests {
         println!(" got = {got:?}");
         println!("want = {want:?}");
         assert_eq!(got, want);
+    }
+
+    #[test]
+    fn test_libc_at_shared_types() {
+        let types = [
+            (Type::AT_NULL, libc::AT_NULL),
+            (Type::AT_IGNORE, libc::AT_IGNORE),
+            (Type::AT_EXECFD, libc::AT_EXECFD),
+            (Type::AT_PHDR, libc::AT_PHDR),
+            (Type::AT_PHENT, libc::AT_PHENT),
+            (Type::AT_PHNUM, libc::AT_PHNUM),
+            (Type::AT_PAGESZ, libc::AT_PAGESZ),
+            (Type::AT_BASE, libc::AT_BASE),
+            (Type::AT_FLAGS, libc::AT_FLAGS),
+            (Type::AT_ENTRY, libc::AT_ENTRY),
+            (Type::AT_NOTELF, libc::AT_NOTELF),
+            (Type::AT_UID, libc::AT_UID),
+            (Type::AT_EUID, libc::AT_EUID),
+            (Type::AT_GID, libc::AT_GID),
+            (Type::AT_EGID, libc::AT_EGID),
+            (Type::AT_HWCAP2, libc::AT_HWCAP2),
+        ];
+        for (got, want) in types {
+            assert_eq!(got.0, want);
+        }
     }
 }
