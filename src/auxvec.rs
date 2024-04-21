@@ -520,8 +520,9 @@ mod rt {
         pub fn envp() -> Option<*const *const u8> {
             if INIT.load(Ordering::Relaxed) {
                 Some(ENVP.load(Ordering::Relaxed))
+            } else {
+                None
             }
-            None
         }
 
         static INIT: AtomicBool = AtomicBool::new(false);
