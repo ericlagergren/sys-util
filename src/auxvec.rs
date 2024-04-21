@@ -461,8 +461,6 @@ mod rt {
         sync::atomic::{AtomicPtr, Ordering},
     };
 
-    use cfg_if::cfg_if;
-
     use super::AuxVal;
 
     /// Returns a pointer to the auxiliary vector.
