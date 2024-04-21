@@ -497,7 +497,7 @@ mod rt {
 
     fn envp() -> *const *const u8 {
         #[cfg(any(target_os = "freebsd", target_env = "gnu"))]
-        if let Some(envp) = init_array.envp() {
+        if let Some(envp) = init_array::envp() {
             return envp;
         }
 
