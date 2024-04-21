@@ -48,6 +48,7 @@ pub fn getauxval(key: Type) -> Option<Word> {
 
     let aux = AuxVec::from_static();
     for v in aux {
+        println!("v={v:#}")?;
         if v.key == key {
             return Some(v.val);
         }
@@ -671,8 +672,6 @@ mod tests {
         let v = AuxVec::from_static();
         println!("{v:#}");
 
-        println!("AT_HWCAP = {}", libc::AT_HWCAP);
-        println!("AT_HWCAP = {:?}", Type::AT_HWCAP);
         let got = getauxval(Type::AT_HWCAP);
         let want = sys_getauxval(libc::AT_HWCAP);
         println!(" got = {got:?}");
