@@ -238,95 +238,161 @@ impl Display for AuxVal {
 #[repr(transparent)]
 pub struct Type(Word);
 
-#[allow(missing_docs)]
 impl Type {
+    /// `AT_NULL`.
     pub const AT_NULL: Self = Self(0);
+    /// `AT_IGNORE`.
     pub const AT_IGNORE: Self = Self(1);
+    /// `AT_EXECFD`.
     pub const AT_EXECFD: Self = Self(2);
+    /// `AT_PHDR`.
     pub const AT_PHDR: Self = Self(3);
+    /// `AT_PHENT`.
     pub const AT_PHENT: Self = Self(4);
+    /// `AT_PHNUM`.
     pub const AT_PHNUM: Self = Self(5);
+    /// `AT_PAGESZ`.
     pub const AT_PAGESZ: Self = Self(6);
+    /// `AT_BASE`.
     pub const AT_BASE: Self = Self(7);
+    /// `AT_FLAGS`.
     pub const AT_FLAGS: Self = Self(8);
+    /// `AT_ENTRY`.
     pub const AT_ENTRY: Self = Self(9);
+    /// `AT_NOTELF`.
     pub const AT_NOTELF: Self = Self(10);
+    /// `AT_UID`.
     pub const AT_UID: Self = Self(11);
+    /// `AT_EUID`.
     pub const AT_EUID: Self = Self(12);
+    /// `AT_GID`.
     pub const AT_GID: Self = Self(13);
+    /// `AT_EGID`.
     pub const AT_EGID: Self = Self(14);
+    /// `AT_HWCAP2`.
     pub const AT_HWCAP2: Self = Self(26);
 }
 
 #[cfg(target_os = "linux")]
 #[cfg_attr(docs, doc(cfg(target_os = "linux")))]
-#[allow(missing_docs)]
 impl Type {
+    /// `AT_PLATFORM`.
     pub const AT_PLATFORM: Self = Self(15);
+    /// `AT_HWCAP`.
     pub const AT_HWCAP: Self = Self(16);
+    /// `AT_CLKTCK`.
     pub const AT_CLKTCK: Self = Self(17);
 
+    /// `AT_FPUCW`.
     #[cfg(feature = "esoteric")]
     pub const AT_FPUCW: Self = Self(18);
+    /// `AT_DCACHEBSIZE`.
     #[cfg(feature = "esoteric")]
     pub const AT_DCACHEBSIZE: Self = Self(19);
+    /// `AT_ICACHEBSIZE`.
     #[cfg(feature = "esoteric")]
     pub const AT_ICACHEBSIZE: Self = Self(20);
+    /// `AT_UCACHEBSIZE`.
     #[cfg(feature = "esoteric")]
     pub const AT_UCACHEBSIZE: Self = Self(21);
+    /// `AT_IGNOREPPC`.
     #[cfg(feature = "esoteric")]
     pub const AT_IGNOREPPC: Self = Self(22);
 
+    /// `AT_SECURE`.
     pub const AT_SECURE: Self = Self(23);
+    /// `AT_BASE_PLATFORM`.
     pub const AT_BASE_PLATFORM: Self = Self(24);
+    /// `AT_RANDOM`.
     pub const AT_RANDOM: Self = Self(25);
+    /// `AT_RSEQ_FEATURE_SIZE`.
     pub const AT_RSEQ_FEATURE_SIZE: Self = Self(27);
+    /// `AT_RSEQ_ALIGN`.
     pub const AT_RSEQ_ALIGN: Self = Self(28);
+    /// `AT_HWCAP3`.
     pub const AT_HWCAP3: Self = Self(29);
+    /// `AT_HWCAP4`.
     pub const AT_HWCAP4: Self = Self(30);
+    /// `AT_EXECFN`.
     pub const AT_EXECFN: Self = Self(31);
+    /// `AT_SYSINFO`.
     pub const AT_SYSINFO: Self = Self(32);
+    /// `AT_SYSINFO_EHDR`.
     pub const AT_SYSINFO_EHDR: Self = Self(33);
+    /// `AT_L1I_CACHESHAPE`.
     pub const AT_L1I_CACHESHAPE: Self = Self(34);
+    /// `AT_L1D_CACHESHAPE`.
     pub const AT_L1D_CACHESHAPE: Self = Self(35);
+    /// `AT_L2_CACHESHAPE`.
     pub const AT_L2_CACHESHAPE: Self = Self(36);
+    /// `AT_L3_CACHESHAPE`.
     pub const AT_L3_CACHESHAPE: Self = Self(37);
+    /// `AT_L1I_CACHESIZE`.
     pub const AT_L1I_CACHESIZE: Self = Self(40);
+    /// `AT_L1I_CACHEGEOMETRY`.
     pub const AT_L1I_CACHEGEOMETRY: Self = Self(41);
+    /// `AT_L1D_CACHESIZE`.
     pub const AT_L1D_CACHESIZE: Self = Self(42);
+    /// `AT_L1D_CACHEGEOMETRY`.
     pub const AT_L1D_CACHEGEOMETRY: Self = Self(43);
+    /// `AT_L2_CACHESIZE`.
     pub const AT_L2_CACHESIZE: Self = Self(44);
+    /// `AT_L2_CACHEGEOMETRY`.
     pub const AT_L2_CACHEGEOMETRY: Self = Self(45);
+    /// `AT_L3_CACHESIZE`.
     pub const AT_L3_CACHESIZE: Self = Self(46);
+    /// `AT_L3_CACHEGEOMETRY`.
     pub const AT_L3_CACHEGEOMETRY: Self = Self(47);
+    /// `AT_MINSIGSTKSZ`.
     pub const AT_MINSIGSTKSZ: Self = Self(51);
 }
 
 #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
 #[cfg_attr(docs, doc(cfg(any(target_os = "dragonfly", target_os = "freebsd"))))]
-#[allow(missing_docs)]
 impl Type {
+    /// `AT_EXECPATH`.
     pub const AT_EXECPATH: Self = Self(15);
+    /// `AT_CANARY`.
     pub const AT_CANARY: Self = Self(16);
+    /// `AT_CANARYLEN`.
     pub const AT_CANARYLEN: Self = Self(17);
+    /// `AT_OSRELDATE`.
     pub const AT_OSRELDATE: Self = Self(18);
+    /// `AT_NCPUS`.
     pub const AT_NCPUS: Self = Self(19);
+    /// `AT_PAGESIZES`.
     pub const AT_PAGESIZES: Self = Self(20);
+    /// `AT_PAGESIZESLEN`.
     pub const AT_PAGESIZESLEN: Self = Self(21);
+    /// `AT_TIMEKEEP`.
     pub const AT_TIMEKEEP: Self = Self(22);
+    /// `AT_STACKPROT`.
     pub const AT_STACKPROT: Self = Self(23);
+    /// `AT_EHDRFLAGS`.
     pub const AT_EHDRFLAGS: Self = Self(24);
+    /// `AT_HWCAP`.
     pub const AT_HWCAP: Self = Self(25);
+    /// `AT_BSDFLAGS`.
     pub const AT_BSDFLAGS: Self = Self(27);
+    /// `AT_ARGC`.
     pub const AT_ARGC: Self = Self(28);
+    /// `AT_ARGV`.
     pub const AT_ARGV: Self = Self(29);
+    /// `AT_ENVC`.
     pub const AT_ENVC: Self = Self(30);
+    /// `AT_ENVV`.
     pub const AT_ENVV: Self = Self(31);
+    /// `AT_PS_STRINGS`.
     pub const AT_PS_STRINGS: Self = Self(32);
+    /// `AT_FXRNG`.
     pub const AT_FXRNG: Self = Self(33);
+    /// `AT_KPRELOAD`.
     pub const AT_KPRELOAD: Self = Self(34);
+    /// `AT_USRSTACKBASE`.
     pub const AT_USRSTACKBASE: Self = Self(35);
+    /// `AT_USRSTACKLIM`.
     pub const AT_USRSTACKLIM: Self = Self(36);
+    /// `AT_COUNT`.
     pub const AT_COUNT: Self = Self(37);
 }
 
@@ -365,13 +431,18 @@ impl Type {
     #[cfg(target_os = "linux")]
     const fn to_str_os(self) -> Option<&'static str> {
         let s = match self {
-            Self::AT_CLKTCK => "AT_CLKTCK",
             Self::AT_PLATFORM => "AT_PLATFORM",
             Self::AT_HWCAP => "AT_HWCAP",
+            Self::AT_CLKTCK => "AT_CLKTCK",
+            #[cfg(feature = "esoteric")]
             Self::AT_FPUCW => "AT_FPUCW",
+            #[cfg(feature = "esoteric")]
             Self::AT_DCACHEBSIZE => "AT_DCACHEBSIZE",
+            #[cfg(feature = "esoteric")]
             Self::AT_ICACHEBSIZE => "AT_ICACHEBSIZE",
+            #[cfg(feature = "esoteric")]
             Self::AT_UCACHEBSIZE => "AT_UCACHEBSIZE",
+            #[cfg(feature = "esoteric")]
             Self::AT_IGNOREPPC => "AT_IGNOREPPC",
             Self::AT_SECURE => "AT_SECURE",
             Self::AT_BASE_PLATFORM => "AT_BASE_PLATFORM",
