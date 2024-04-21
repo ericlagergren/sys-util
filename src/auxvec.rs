@@ -624,7 +624,7 @@ mod tests {
             (Type::AT_HWCAP2, libc::AT_HWCAP2),
         ];
         for (got, want) in types {
-            assert_eq!(got.0, want);
+            assert_eq!(got.0, want as Word);
         }
     }
 }
