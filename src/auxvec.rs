@@ -740,11 +740,12 @@ mod tests {
     #[cfg(target_os = "linux")]
     #[test]
     fn test_libc_at_types_linux() {
+        // Commented out types are currently not included in
+        // `libc`.
         let types = [
             (Type::AT_PLATFORM, libc::AT_PLATFORM),
             (Type::AT_HWCAP, libc::AT_HWCAP),
             (Type::AT_CLKTCK, libc::AT_CLKTCK),
-            // Currently not included in `libc`.
             // (Type::AT_FPUCW, libc::AT_FPUCW),
             // (Type::AT_DCACHEBSIZE, libc::AT_DCACHEBSIZE),
             // (Type::AT_ICACHEBSIZE, libc::AT_ICACHEBSIZE),
@@ -753,14 +754,13 @@ mod tests {
             (Type::AT_SECURE, libc::AT_SECURE),
             (Type::AT_BASE_PLATFORM, libc::AT_BASE_PLATFORM),
             (Type::AT_RANDOM, libc::AT_RANDOM),
-            (Type::AT_RSEQ_FEATURE_SIZE, libc::AT_RSEQ_FEATURE_SIZE),
-            (Type::AT_RSEQ_ALIGN, libc::AT_RSEQ_ALIGN),
-            (Type::AT_HWCAP3, libc::AT_HWCAP3),
-            (Type::AT_HWCAP4, libc::AT_HWCAP4),
+            // (Type::AT_RSEQ_FEATURE_SIZE, libc::AT_RSEQ_FEATURE_SIZE),
+            // (Type::AT_RSEQ_ALIGN, libc::AT_RSEQ_ALIGN),
+            // (Type::AT_HWCAP3, libc::AT_HWCAP3),
+            // (Type::AT_HWCAP4, libc::AT_HWCAP4),
             (Type::AT_EXECFN, libc::AT_EXECFN),
-            (Type::AT_SYSINFO, libc::AT_SYSINFO),
+            // (Type::AT_SYSINFO, libc::AT_SYSINFO),
             (Type::AT_SYSINFO_EHDR, libc::AT_SYSINFO_EHDR),
-            // Currently not included in `libc`.
             // (Type::AT_L1I_CACHESHAPE, libc::AT_L1I_CACHESHAPE),
             // (Type::AT_L1D_CACHESHAPE, libc::AT_L1D_CACHESHAPE),
             // (Type::AT_L2_CACHESHAPE, libc::AT_L2_CACHESHAPE),
