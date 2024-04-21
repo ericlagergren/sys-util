@@ -553,7 +553,9 @@ mod tests {
 
     #[test]
     fn test_libc_compat() {
-        use core::ffi::{c_int, c_ulong};
+        #[cfg(target_os = "freebsd")]
+        use core::ffi::c_int;
+        use core::ffi::c_ulong;
 
         #[cfg(target_os = "linux")]
         fn sys_getauxval(type_: c_ulong) -> Option<c_ulong> {
