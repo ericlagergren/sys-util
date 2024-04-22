@@ -637,8 +637,8 @@ mod tests {
 
     macro_rules! atype {
         ($name:ident) => {{
-            (Type::$name, atc!($name)),
-        }}
+            (Type::$name, atc!($name))
+        }};
     }
 
     const BASE_TYPES: [(Type, Word); 16] = [
