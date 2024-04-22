@@ -105,10 +105,10 @@ impl AuxVec {
         unsafe { &*(v as *const [AuxVal] as *const AuxVec) }
     }
 
-    /// Returns an iterator over the auxiliary vector.
-    pub fn iter(&self) -> impl Iterator<Item = &AuxVal> {
-        self.0.iter()
-    }
+    // /// Returns an iterator over the auxiliary vector.
+    // pub fn iter(&self) -> impl Iterator<Item = &AuxVal> {
+    //     self.0.iter()
+    // }
 }
 
 impl Deref for AuxVec {
@@ -124,7 +124,8 @@ impl<'a> IntoIterator for &'a AuxVec {
     type IntoIter = slice::Iter<'a, AuxVal>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.0.iter()
+        self.0.into_iter()
+        //self.0.iter()
     }
 }
 
