@@ -629,157 +629,140 @@ mod rt {
     )
 ))]
 mod tests {
+    use core::ffi::{c_int, c_ulong};
+
     use super::*;
+
+    const BASE_TYPES: [(Type, c_int); 16] = [
+        (Type::AT_NULL, libc::AT_NULL),
+        (Type::AT_IGNORE, libc::AT_IGNORE),
+        (Type::AT_EXECFD, libc::AT_EXECFD),
+        (Type::AT_PHDR, libc::AT_PHDR),
+        (Type::AT_PHENT, libc::AT_PHENT),
+        (Type::AT_PHNUM, libc::AT_PHNUM),
+        (Type::AT_PAGESZ, libc::AT_PAGESZ),
+        (Type::AT_BASE, libc::AT_BASE),
+        (Type::AT_FLAGS, libc::AT_FLAGS),
+        (Type::AT_ENTRY, libc::AT_ENTRY),
+        (Type::AT_NOTELF, libc::AT_NOTELF),
+        (Type::AT_UID, libc::AT_UID),
+        (Type::AT_EUID, libc::AT_EUID),
+        (Type::AT_GID, libc::AT_GID),
+        (Type::AT_EGID, libc::AT_EGID),
+        (Type::AT_HWCAP2, libc::AT_HWCAP2),
+    ];
+
+    // Commented out types are currently not included in `libc`.
+    #[cfg(target_os = "freebsd")]
+    const OS_TYPES: [(Type, c_int); 8] = [
+        (Type::AT_EXECPATH, libc::AT_EXECPATH),
+        (Type::AT_CANARY, libc::AT_CANARY),
+        // (Type::AT_CANARYLEN, libc::AT_CANARYLEN),
+        (Type::AT_OSRELDATE, libc::AT_OSRELDATE),
+        (Type::AT_NCPUS, libc::AT_NCPUS),
+        // (Type::AT_PAGESIZES, libc::AT_PAGESIZES),
+        // (Type::AT_PAGESIZESLEN, libc::AT_PAGESIZESLEN),
+        (Type::AT_TIMEKEEP, libc::AT_TIMEKEEP),
+        // (Type::AT_STACKPROT, libc::AT_STACKPROT),
+        // (Type::AT_EHDRFLAGS, libc::AT_EHDRFLAGS),
+        (Type::AT_HWCAP, libc::AT_HWCAP),
+        // (Type::AT_BSDFLAGS, libc::AT_BSDFLAGS),
+        // (Type::AT_ARGC, libc::AT_ARGC),
+        // (Type::AT_ARGV, libc::AT_ARGV),
+        // (Type::AT_ENVC, libc::AT_ENVC),
+        // (Type::AT_ENVV, libc::AT_ENVV),
+        // (Type::AT_PS_STRINGS, libc::AT_PS_STRINGS),
+        // (Type::AT_FXRNG, libc::AT_FXRNG),
+        // (Type::AT_KPRELOAD, libc::AT_KPRELOAD),
+        (Type::AT_USRSTACKBASE, libc::AT_USRSTACKBASE),
+        (Type::AT_USRSTACKLIM, libc::AT_USRSTACKLIM),
+        // (Type::AT_COUNT, libc::AT_COUNT),
+    ];
+
+    // Commented out types are currently not included in `libc`.
+    #[cfg(target_os = "linux")]
+    const OS_TYPES: [(Type, c_int); 8] = [
+        (Type::AT_PLATFORM, libc::AT_PLATFORM),
+        (Type::AT_HWCAP, libc::AT_HWCAP),
+        (Type::AT_CLKTCK, libc::AT_CLKTCK),
+        // (Type::AT_FPUCW, libc::AT_FPUCW),
+        // (Type::AT_DCACHEBSIZE, libc::AT_DCACHEBSIZE),
+        // (Type::AT_ICACHEBSIZE, libc::AT_ICACHEBSIZE),
+        // (Type::AT_UCACHEBSIZE, libc::AT_UCACHEBSIZE),
+        // (Type::AT_IGNOREPPC, libc::AT_IGNOREPPC),
+        (Type::AT_SECURE, libc::AT_SECURE),
+        (Type::AT_BASE_PLATFORM, libc::AT_BASE_PLATFORM),
+        (Type::AT_RANDOM, libc::AT_RANDOM),
+        // (Type::AT_RSEQ_FEATURE_SIZE, libc::AT_RSEQ_FEATURE_SIZE),
+        // (Type::AT_RSEQ_ALIGN, libc::AT_RSEQ_ALIGN),
+        // (Type::AT_HWCAP3, libc::AT_HWCAP3),
+        // (Type::AT_HWCAP4, libc::AT_HWCAP4),
+        (Type::AT_EXECFN, libc::AT_EXECFN),
+        // (Type::AT_SYSINFO, libc::AT_SYSINFO),
+        (Type::AT_SYSINFO_EHDR, libc::AT_SYSINFO_EHDR),
+        // (Type::AT_L1I_CACHESHAPE, libc::AT_L1I_CACHESHAPE),
+        // (Type::AT_L1D_CACHESHAPE, libc::AT_L1D_CACHESHAPE),
+        // (Type::AT_L2_CACHESHAPE, libc::AT_L2_CACHESHAPE),
+        // (Type::AT_L3_CACHESHAPE, libc::AT_L3_CACHESHAPE),
+        // (Type::AT_L1I_CACHESIZE, libc::AT_L1I_CACHESIZE),
+        // (Type::AT_L1I_CACHEGEOMETRY, libc::AT_L1I_CACHEGEOMETRY),
+        // (Type::AT_L1D_CACHESIZE, libc::AT_L1D_CACHESIZE),
+        // (Type::AT_L1D_CACHEGEOMETRY, libc::AT_L1D_CACHEGEOMETRY),
+        // (Type::AT_L2_CACHESIZE, libc::AT_L2_CACHESIZE),
+        // (Type::AT_L2_CACHEGEOMETRY, libc::AT_L2_CACHEGEOMETRY),
+        // (Type::AT_L3_CACHESIZE, libc::AT_L3_CACHESIZE),
+        // (Type::AT_L3_CACHEGEOMETRY, libc::AT_L3_CACHEGEOMETRY),
+        // (Type::AT_MINSIGSTKSZ, libc::AT_MINSIGSTKSZ),
+    ];
+
+    #[cfg(target_os = "linux")]
+    fn sys_getauxval(type_: c_ulong) -> Option<c_ulong> {
+        // SAFETY: FFI call, no invariants.
+        let value = unsafe { libc::getauxval(type_) };
+        if value == 0 {
+            // SAFETY: FFI call, no invariants.
+            let errno = unsafe { *libc::__errno_location() };
+            if errno == libc::ENOENT {
+                return None;
+            }
+        }
+        Some(value)
+    }
+
+    #[cfg(target_os = "freebsd")]
+    fn sys_getauxval(type_: c_int) -> Option<c_ulong> {
+        use core::{mem, ptr};
+
+        let mut out: c_ulong = 0;
+        // SAFETY: FFI call, no invariants.
+        let ret = unsafe {
+            libc::elf_aux_info(
+                type_,
+                ptr::addr_of_mut!(out) as _,
+                mem::size_of_val(&out) as c_int,
+            )
+        };
+        if ret != 0 {
+            None
+        } else {
+            Some(out)
+        }
+    }
 
     #[test]
     fn test_libc_compat() {
         #[cfg(target_os = "freebsd")]
-        use core::ffi::c_int;
-        use core::ffi::c_ulong;
-
-        #[cfg(target_os = "linux")]
-        fn sys_getauxval(type_: c_ulong) -> Option<c_ulong> {
-            // SAFETY: FFI call, no invariants.
-            let value = unsafe { libc::getauxval(type_) };
-            if value == 0 {
-                // SAFETY: FFI call, no invariants.
-                let errno = unsafe { *libc::__errno_location() };
-                if errno == libc::ENOENT {
-                    return None;
-                }
-            }
-            Some(value)
-        }
-
-        #[cfg(target_os = "freebsd")]
-        fn sys_getauxval(type_: c_int) -> Option<c_ulong> {
-            use core::{mem, ptr};
-
-            let mut out: c_ulong = 0;
-            // SAFETY: FFI call, no invariants.
-            let ret = unsafe {
-                libc::elf_aux_info(
-                    type_,
-                    ptr::addr_of_mut!(out) as _,
-                    mem::size_of_val(&out) as c_int,
-                )
-            };
-            if ret != 0 {
-                None
-            } else {
-                Some(out)
-            }
-        }
-
         let v = AuxVec::from_static();
         println!("{v:#}");
 
-        let got = getauxval(Type::AT_HWCAP);
-        let want = sys_getauxval(libc::AT_HWCAP);
-        println!(" got = {got:?}");
-        println!("want = {want:?}");
-        assert_eq!(got, want);
-    }
-
-    #[test]
-    fn test_libc_at_types_shared() {
-        let types = [
-            (Type::AT_NULL, libc::AT_NULL),
-            (Type::AT_IGNORE, libc::AT_IGNORE),
-            (Type::AT_EXECFD, libc::AT_EXECFD),
-            (Type::AT_PHDR, libc::AT_PHDR),
-            (Type::AT_PHENT, libc::AT_PHENT),
-            (Type::AT_PHNUM, libc::AT_PHNUM),
-            (Type::AT_PAGESZ, libc::AT_PAGESZ),
-            (Type::AT_BASE, libc::AT_BASE),
-            (Type::AT_FLAGS, libc::AT_FLAGS),
-            (Type::AT_ENTRY, libc::AT_ENTRY),
-            (Type::AT_NOTELF, libc::AT_NOTELF),
-            (Type::AT_UID, libc::AT_UID),
-            (Type::AT_EUID, libc::AT_EUID),
-            (Type::AT_GID, libc::AT_GID),
-            (Type::AT_EGID, libc::AT_EGID),
-            (Type::AT_HWCAP2, libc::AT_HWCAP2),
-        ];
-        for (got, want) in types {
+        for (got, want) in BASE_TYPES.into_iter().concat(OS_TYPES) {
             assert_eq!(got.0, want as Word);
-        }
-    }
 
-    #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-    #[test]
-    fn test_libc_at_types_bsd() {
-        // Commented out types are currently not included in
-        // `libc`.
-        let types = [
-            (Type::AT_EXECPATH, libc::AT_EXECPATH),
-            (Type::AT_CANARY, libc::AT_CANARY),
-            // (Type::AT_CANARYLEN, libc::AT_CANARYLEN),
-            (Type::AT_OSRELDATE, libc::AT_OSRELDATE),
-            (Type::AT_NCPUS, libc::AT_NCPUS),
-            // (Type::AT_PAGESIZES, libc::AT_PAGESIZES),
-            // (Type::AT_PAGESIZESLEN, libc::AT_PAGESIZESLEN),
-            (Type::AT_TIMEKEEP, libc::AT_TIMEKEEP),
-            // (Type::AT_STACKPROT, libc::AT_STACKPROT),
-            // (Type::AT_EHDRFLAGS, libc::AT_EHDRFLAGS),
-            (Type::AT_HWCAP, libc::AT_HWCAP),
-            // (Type::AT_BSDFLAGS, libc::AT_BSDFLAGS),
-            // (Type::AT_ARGC, libc::AT_ARGC),
-            // (Type::AT_ARGV, libc::AT_ARGV),
-            // (Type::AT_ENVC, libc::AT_ENVC),
-            // (Type::AT_ENVV, libc::AT_ENVV),
-            // (Type::AT_PS_STRINGS, libc::AT_PS_STRINGS),
-            // (Type::AT_FXRNG, libc::AT_FXRNG),
-            // (Type::AT_KPRELOAD, libc::AT_KPRELOAD),
-            (Type::AT_USRSTACKBASE, libc::AT_USRSTACKBASE),
-            (Type::AT_USRSTACKLIM, libc::AT_USRSTACKLIM),
-            // (Type::AT_COUNT, libc::AT_COUNT),
-        ];
-        for (got, want) in types {
-            assert_eq!(got.0, want as Word);
-        }
-    }
-
-    #[cfg(target_os = "linux")]
-    #[test]
-    fn test_libc_at_types_linux() {
-        // Commented out types are currently not included in
-        // `libc`.
-        let types = [
-            (Type::AT_PLATFORM, libc::AT_PLATFORM),
-            (Type::AT_HWCAP, libc::AT_HWCAP),
-            (Type::AT_CLKTCK, libc::AT_CLKTCK),
-            // (Type::AT_FPUCW, libc::AT_FPUCW),
-            // (Type::AT_DCACHEBSIZE, libc::AT_DCACHEBSIZE),
-            // (Type::AT_ICACHEBSIZE, libc::AT_ICACHEBSIZE),
-            // (Type::AT_UCACHEBSIZE, libc::AT_UCACHEBSIZE),
-            // (Type::AT_IGNOREPPC, libc::AT_IGNOREPPC),
-            (Type::AT_SECURE, libc::AT_SECURE),
-            (Type::AT_BASE_PLATFORM, libc::AT_BASE_PLATFORM),
-            (Type::AT_RANDOM, libc::AT_RANDOM),
-            // (Type::AT_RSEQ_FEATURE_SIZE, libc::AT_RSEQ_FEATURE_SIZE),
-            // (Type::AT_RSEQ_ALIGN, libc::AT_RSEQ_ALIGN),
-            // (Type::AT_HWCAP3, libc::AT_HWCAP3),
-            // (Type::AT_HWCAP4, libc::AT_HWCAP4),
-            (Type::AT_EXECFN, libc::AT_EXECFN),
-            // (Type::AT_SYSINFO, libc::AT_SYSINFO),
-            (Type::AT_SYSINFO_EHDR, libc::AT_SYSINFO_EHDR),
-            // (Type::AT_L1I_CACHESHAPE, libc::AT_L1I_CACHESHAPE),
-            // (Type::AT_L1D_CACHESHAPE, libc::AT_L1D_CACHESHAPE),
-            // (Type::AT_L2_CACHESHAPE, libc::AT_L2_CACHESHAPE),
-            // (Type::AT_L3_CACHESHAPE, libc::AT_L3_CACHESHAPE),
-            // (Type::AT_L1I_CACHESIZE, libc::AT_L1I_CACHESIZE),
-            // (Type::AT_L1I_CACHEGEOMETRY, libc::AT_L1I_CACHEGEOMETRY),
-            // (Type::AT_L1D_CACHESIZE, libc::AT_L1D_CACHESIZE),
-            // (Type::AT_L1D_CACHEGEOMETRY, libc::AT_L1D_CACHEGEOMETRY),
-            // (Type::AT_L2_CACHESIZE, libc::AT_L2_CACHESIZE),
-            // (Type::AT_L2_CACHEGEOMETRY, libc::AT_L2_CACHEGEOMETRY),
-            // (Type::AT_L3_CACHESIZE, libc::AT_L3_CACHESIZE),
-            // (Type::AT_L3_CACHEGEOMETRY, libc::AT_L3_CACHEGEOMETRY),
-            // (Type::AT_MINSIGSTKSZ, libc::AT_MINSIGSTKSZ),
-        ];
-        for (got, want) in types {
-            assert_eq!(got.0, want as Word);
+            let got = getauxval(Type::AT_HWCAP);
+            let want = sys_getauxval(libc::AT_HWCAP);
+            println!(" got = {got:?}");
+            println!("want = {want:?}");
+            assert_eq!(got, want);
         }
     }
 }
