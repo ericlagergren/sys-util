@@ -531,11 +531,11 @@ mod rt {
         unsafe {
             extern "C" {
                 static _rtld_global_ro: *const ();
-                static _dl_auxv: *const AuxVal;
+                //static _dl_auxv: *const AuxVal;
             }
-            if !_dl_auxv.is_null() {
-                return _dl_auxv;
-            }
+            // if !_dl_auxv.is_null() {
+            //     return _dl_auxv;
+            // }
         }
         let mut ptr = AUXV.load(Ordering::Relaxed);
         if ptr.is_null() {
