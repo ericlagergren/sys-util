@@ -23,7 +23,7 @@ cfg_if! {
 /// See libc's `getauxval`.
 #[cfg(any(freebsdish, linuxish, netbsdish, solarish))]
 #[cfg_attr(
-    doc,
+    docs,
     doc(cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
