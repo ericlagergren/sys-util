@@ -633,6 +633,7 @@ mod tests {
 
     use super::*;
 
+    #[cfg_attr(not(target_os = "linux"), allow(unused_macros))]
     macro_rules! const_assert_eq {
         ($($tt:tt)*) => {
             const _: () = assert_eq!($($tt)*);
