@@ -634,7 +634,7 @@ mod tests {
     use super::*;
 
     macro_rules! atc {
-        ($name:ident) -> {{
+        ($name:ident) => {{
             cfg_if! {
                 if #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))] {
                     libc::$name as Word
@@ -642,7 +642,7 @@ mod tests {
                     libc::$name
                 }
             }
-        }}
+        }};
     }
 
     const BASE_TYPES: [(Type, Word); 16] = [
