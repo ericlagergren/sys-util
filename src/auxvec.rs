@@ -633,6 +633,18 @@ mod tests {
 
     use super::*;
 
+    macro_rules! const_assert {
+        ($($tt:tt)*) => {
+            const _: () = assert!($($tt)*);
+        }
+    }
+
+    macro_rules! const_assert_eq {
+        ($($tt:tt)*) => {
+            const _: () = assert_eq!($($tt)*);
+        }
+    }
+
     macro_rules! atc {
         ($name:ident) => {{
             cfg_if! {
@@ -728,7 +740,9 @@ mod tests {
     ];
 
     #[cfg(target_os = "linux")]
-    fn sys_getauxval(type_: c_ulong) -> Option<c_ulong> {
+    fn sys_getauxval(type_: Word) -> Option<c_ulong> {
+        const_assert_eq!(mem::size_of::<c_ulong>, mem::size_of::<Word>());
+
         // SAFETY: FFI call, no invariants.
         let value = unsafe { libc::getauxval(type_) };
         if value == 0 {
@@ -742,7 +756,7 @@ mod tests {
     }
 
     #[cfg(target_os = "freebsd")]
-    fn sys_getauxval(type_: c_int) -> Option<c_ulong> {
+    fn sys_getauxval(type_: Word) -> Option<c_ulong> {
         use core::{mem, ptr};
 
         let mut out: c_ulong = 0;
