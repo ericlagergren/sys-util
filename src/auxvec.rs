@@ -751,11 +751,10 @@ mod tests {
 
     #[test]
     fn test_libc_compat() {
-        #[cfg(target_os = "freebsd")]
         let v = AuxVec::from_static();
         println!("{v:#}");
 
-        for (got, want) in BASE_TYPES.into_iter().concat(OS_TYPES) {
+        for (got, want) in BASE_TYPES.concat(OS_TYPES) {
             assert_eq!(got.0, want as Word);
 
             let got = getauxval(Type::AT_HWCAP);
