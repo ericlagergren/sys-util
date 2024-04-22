@@ -567,6 +567,7 @@ mod rt {
     }
     extern "C" {
         static mut environ: *const *const c_char;
+        static _dl_auxv: *const AuxVal;
     }
     static ENVIRON: AtomicPtr<*const *const c_char> =
         // SAFETY: we just took the address of `environ`.
