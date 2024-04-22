@@ -5,6 +5,7 @@ fn main() {
 
     let os = env::var("CARGO_CFG_TARGET_OS").unwrap();
 
+    let mut have_auxv = true;
     if os == "freebsd" || os == "dragonfly" {
         use_feature("freebsdish");
     } else if os == "solaris" || os == "illumos" {
@@ -13,6 +14,11 @@ fn main() {
         use_feature("linuxish");
     } else if os == "netbsd" {
         use_feature("netbsdish");
+    } else {
+        have_auxv = false;
+    }
+    if have_auxv {
+        use_feature("have_auxv");
     }
 }
 

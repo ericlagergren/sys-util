@@ -21,7 +21,7 @@ cfg_if! {
 }
 
 /// See libc's `getauxval`.
-#[cfg(any(freebsdish, linuxish, netbsdish, solarish))]
+#[cfg(have_auxv)]
 #[cfg_attr(
     docs,
     doc(cfg(any(
@@ -55,7 +55,7 @@ pub struct AuxVec([AuxVal]);
 
 impl AuxVec {
     /// Returns the auxiliary vector from the process stack.
-    #[cfg(any(freebsdish, linuxish, netbsdish, solarish))]
+    #[cfg(have_auxv)]
     #[cfg_attr(
         docs,
         doc(cfg(any(
@@ -104,11 +104,6 @@ impl AuxVec {
         // layout.
         unsafe { &*(v as *const [AuxVal] as *const AuxVec) }
     }
-
-    // /// Returns an iterator over the auxiliary vector.
-    // pub fn iter(&self) -> impl Iterator<Item = &AuxVal> {
-    //     self.0.iter()
-    // }
 }
 
 impl Deref for AuxVec {
@@ -521,7 +516,7 @@ impl PartialEq<Word> for Type {
     }
 }
 
-#[cfg(any(freebsdish, linuxish, netbsdish, solarish))]
+#[cfg(have_auxv)]
 mod rt {
     use core::{
         ffi::c_char,
@@ -562,7 +557,7 @@ mod rt {
     }
 
     fn envp() -> *const *const u8 {
-        #[cfg(any(target_os = "freebsd", target_env = "gnu"))]
+        #[cfg(any(freebsdish, target_env = "gnu"))]
         if let Some(envp) = init_array::envp() {
             return envp;
         }
@@ -623,7 +618,7 @@ mod tests {
     macro_rules! atc {
         ($name:ident) => {{
             cfg_if! {
-                if #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))] {
+                if #[cfg(freebsdish)] {
                     libc::$name as Word
                 } else {
                     libc::$name
