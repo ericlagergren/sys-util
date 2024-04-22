@@ -610,7 +610,7 @@ mod rt {
     }
 }
 
-#[cfg(all(test, freebsdish, linuxish, netbsdish, solarish))]
+#[cfg(have_auxv)]
 mod tests {
     use core::{ffi::c_ulong, mem};
 
