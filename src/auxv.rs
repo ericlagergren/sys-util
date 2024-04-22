@@ -268,7 +268,7 @@ impl Type {
     pub const AT_HWCAP2: Self = Self(26);
 }
 
-#[cfg(any(freebsdish))]
+#[cfg(freebsdish)]
 #[cfg_attr(docs, doc(cfg(any(target_os = "dragonfly", target_os = "freebsd"))))]
 impl Type {
     /// `AT_EXECPATH`.
