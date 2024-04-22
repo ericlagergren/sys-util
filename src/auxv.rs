@@ -530,6 +530,7 @@ mod rt {
     pub fn auxv() -> *const AuxVal {
         unsafe {
             extern "C" {
+                static _rtld_global_ro: *const ();
                 static _dl_auxv: *const AuxVal;
             }
             if !_dl_auxv.is_null() {
