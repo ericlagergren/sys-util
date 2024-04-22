@@ -629,7 +629,7 @@ mod rt {
     )
 ))]
 mod tests {
-    use core::ffi::{c_int, c_ulong};
+    use core::{ffi::c_ulong, mem};
 
     use super::*;
 
@@ -736,8 +736,6 @@ mod tests {
 
     #[cfg(target_os = "linux")]
     fn sys_getauxval(type_: Word) -> Option<c_ulong> {
-        use core::mem;
-
         const_assert!(mem::size_of::<c_ulong>() == mem::size_of::<Word>());
 
         // SAFETY: FFI call, no invariants.
@@ -754,7 +752,7 @@ mod tests {
 
     #[cfg(target_os = "freebsd")]
     fn sys_getauxval(type_: Word) -> Option<c_ulong> {
-        use core::{mem, ptr};
+        use core::{ffi::c_int, ptr};
 
         let mut out: c_ulong = 0;
         // SAFETY: FFI call, no invariants.
