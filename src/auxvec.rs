@@ -709,29 +709,31 @@ mod tests {
     #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
     #[test]
     fn test_libc_at_types_bsd() {
+        // Commented out types are currently not included in
+        // `libc`.
         let types = [
             (Type::AT_EXECPATH, libc::AT_EXECPATH),
             (Type::AT_CANARY, libc::AT_CANARY),
-            (Type::AT_CANARYLEN, libc::AT_CANARYLEN),
+            // (Type::AT_CANARYLEN, libc::AT_CANARYLEN),
             (Type::AT_OSRELDATE, libc::AT_OSRELDATE),
             (Type::AT_NCPUS, libc::AT_NCPUS),
-            (Type::AT_PAGESIZES, libc::AT_PAGESIZES),
+            // (Type::AT_PAGESIZES, libc::AT_PAGESIZES),
             (Type::AT_PAGESIZESLEN, libc::AT_PAGESIZESLEN),
             (Type::AT_TIMEKEEP, libc::AT_TIMEKEEP),
-            (Type::AT_STACKPROT, libc::AT_STACKPROT),
-            (Type::AT_EHDRFLAGS, libc::AT_EHDRFLAGS),
+            // (Type::AT_STACKPROT, libc::AT_STACKPROT),
+            // (Type::AT_EHDRFLAGS, libc::AT_EHDRFLAGS),
             (Type::AT_HWCAP, libc::AT_HWCAP),
-            (Type::AT_BSDFLAGS, libc::AT_BSDFLAGS),
-            (Type::AT_ARGC, libc::AT_ARGC),
-            (Type::AT_ARGV, libc::AT_ARGV),
-            (Type::AT_ENVC, libc::AT_ENVC),
-            (Type::AT_ENVV, libc::AT_ENVV),
-            (Type::AT_PS_STRINGS, libc::AT_PS_STRINGS),
-            (Type::AT_FXRNG, libc::AT_FXRNG),
-            (Type::AT_KPRELOAD, libc::AT_KPRELOAD),
+            // (Type::AT_BSDFLAGS, libc::AT_BSDFLAGS),
+            // (Type::AT_ARGC, libc::AT_ARGC),
+            // (Type::AT_ARGV, libc::AT_ARGV),
+            // (Type::AT_ENVC, libc::AT_ENVC),
+            // (Type::AT_ENVV, libc::AT_ENVV),
+            // (Type::AT_PS_STRINGS, libc::AT_PS_STRINGS),
+            // (Type::AT_FXRNG, libc::AT_FXRNG),
+            // (Type::AT_KPRELOAD, libc::AT_KPRELOAD),
             (Type::AT_USRSTACKBASE, libc::AT_USRSTACKBASE),
             (Type::AT_USRSTACKLIM, libc::AT_USRSTACKLIM),
-            (Type::AT_COUNT, libc::AT_COUNT),
+            // (Type::AT_COUNT, libc::AT_COUNT),
         ];
         for (got, want) in types {
             assert_eq!(got.0, want as Word);
