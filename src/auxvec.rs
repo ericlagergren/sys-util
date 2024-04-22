@@ -718,7 +718,7 @@ mod tests {
             (Type::AT_OSRELDATE, libc::AT_OSRELDATE),
             (Type::AT_NCPUS, libc::AT_NCPUS),
             // (Type::AT_PAGESIZES, libc::AT_PAGESIZES),
-            (Type::AT_PAGESIZESLEN, libc::AT_PAGESIZESLEN),
+            // (Type::AT_PAGESIZESLEN, libc::AT_PAGESIZESLEN),
             (Type::AT_TIMEKEEP, libc::AT_TIMEKEEP),
             // (Type::AT_STACKPROT, libc::AT_STACKPROT),
             // (Type::AT_EHDRFLAGS, libc::AT_EHDRFLAGS),
