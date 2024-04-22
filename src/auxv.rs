@@ -528,11 +528,13 @@ mod rt {
 
     /// Returns a pointer to the auxiliary vector.
     pub fn auxv() -> *const AuxVal {
-        extern "C" {
-            static _dl_auxv: *const AuxVal;
-        }
-        if !_dl_auxv.is_null() {
-            return _dl_auxv;
+        unsafe {
+            extern "C" {
+                static _dl_auxv: *const AuxVal;
+            }
+            if !_dl_auxv.is_null() {
+                return _dl_auxv;
+            }
         }
         let mut ptr = AUXV.load(Ordering::Relaxed);
         if ptr.is_null() {
