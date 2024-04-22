@@ -528,6 +528,12 @@ mod rt {
 
     /// Returns a pointer to the auxiliary vector.
     pub fn auxv() -> *const AuxVal {
+        extern "C" {
+            static _dl_auxv: *const AuxVal;
+        }
+        if !_dl_auxv.is_null() {
+            return _dl_auxv;
+        }
         let mut ptr = AUXV.load(Ordering::Relaxed);
         if ptr.is_null() {
             // SAFETY: `env` contains a valid process stack.
@@ -567,7 +573,6 @@ mod rt {
     }
     extern "C" {
         static mut environ: *const *const c_char;
-        static _dl_auxv: *const AuxVal;
     }
     static ENVIRON: AtomicPtr<*const *const c_char> =
         // SAFETY: we just took the address of `environ`.
