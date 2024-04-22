@@ -681,7 +681,7 @@ mod tests {
 
     // Commented out types are currently not included in `libc`.
     #[cfg(target_os = "linux")]
-    const OS_TYPES: [(Type, c_int); 8] = [
+    const OS_TYPES: [(Type, Word); 8] = [
         (Type::AT_PLATFORM, libc::AT_PLATFORM),
         (Type::AT_HWCAP, libc::AT_HWCAP),
         (Type::AT_CLKTCK, libc::AT_CLKTCK),
