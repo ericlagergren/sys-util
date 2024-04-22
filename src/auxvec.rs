@@ -736,6 +736,8 @@ mod tests {
 
     #[cfg(target_os = "linux")]
     fn sys_getauxval(type_: Word) -> Option<c_ulong> {
+        use core::mem;
+
         const_assert_eq!(mem::size_of::<c_ulong>, mem::size_of::<Word>());
 
         // SAFETY: FFI call, no invariants.
