@@ -559,7 +559,7 @@ mod rt {
                 static _rtld_global_ro: *const RtldGlobal;
                 //static _dl_auxv: *const AuxVal;
             }
-            if !_rtld_global_rgo.is_null() {
+            if !_rtld_global_ro.is_null() {
                 return _rtld_global_ro._dl_auxv;
             }
         }
