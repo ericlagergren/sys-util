@@ -633,7 +633,7 @@ mod tests {
 
     use super::*;
 
-    const BASE_TYPES: [(Type, c_int); 16] = [
+    const BASE_TYPES: [(Type, Word); 16] = [
         (Type::AT_NULL, libc::AT_NULL),
         (Type::AT_IGNORE, libc::AT_IGNORE),
         (Type::AT_EXECFD, libc::AT_EXECFD),
@@ -654,7 +654,7 @@ mod tests {
 
     // Commented out types are currently not included in `libc`.
     #[cfg(target_os = "freebsd")]
-    const OS_TYPES: [(Type, c_int); 8] = [
+    const OS_TYPES: [(Type, Word); 8] = [
         (Type::AT_EXECPATH, libc::AT_EXECPATH),
         (Type::AT_CANARY, libc::AT_CANARY),
         // (Type::AT_CANARYLEN, libc::AT_CANARYLEN),
