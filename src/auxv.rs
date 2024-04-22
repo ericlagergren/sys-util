@@ -610,7 +610,7 @@ mod rt {
     }
 }
 
-#[cfg(have_auxv)]
+#[cfg(all(test, have_auxv))]
 mod tests {
     use core::{ffi::c_ulong, mem};
 
@@ -636,9 +636,9 @@ mod tests {
     }
 
     macro_rules! atype {
-        ($name:ident) => {{
+        ($name:ident) => {
             (Type::$name, atc!($name))
-        }};
+        };
     }
 
     const BASE_TYPES: [(Type, Word); 16] = [
