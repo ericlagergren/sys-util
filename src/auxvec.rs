@@ -633,12 +633,6 @@ mod tests {
 
     use super::*;
 
-    macro_rules! const_assert {
-        ($($tt:tt)*) => {
-            const _: () = assert!($($tt)*);
-        }
-    }
-
     macro_rules! const_assert_eq {
         ($($tt:tt)*) => {
             const _: () = assert_eq!($($tt)*);
@@ -763,7 +757,7 @@ mod tests {
         // SAFETY: FFI call, no invariants.
         let ret = unsafe {
             libc::elf_aux_info(
-                type_,
+                type_ as c_int,
                 ptr::addr_of_mut!(out) as _,
                 mem::size_of_val(&out) as c_int,
             )
