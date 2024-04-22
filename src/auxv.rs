@@ -557,10 +557,10 @@ mod rt {
                 _dl_auxv: *const AuxVal,
             }
             extern "C" {
-                static _rtld_global_ro: *const RtldGlobal;
+                static _rtld_global_ro: RtldGlobal;
                 //static _dl_auxv: *const AuxVal;
             }
-            println!("{:?}", *_rtld_global_ro);
+            println!("{:?}", _rtld_global_ro);
             // if !_rtld_global_ro.is_null() {
             //     println!("hwcap={}", (*_rtld_global_ro)._dl_hwcap);
             //     return (*_rtld_global_ro)._dl_auxv;
