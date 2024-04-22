@@ -4,7 +4,6 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
     let os = env::var("CARGO_CFG_TARGET_OS").unwrap();
-    println!("cargo:warning={}", os);
 
     let mut have_auxv = true;
     if os == "freebsd" || os == "dragonfly" {
