@@ -633,86 +633,98 @@ mod tests {
 
     use super::*;
 
+    macro_rules! atc {
+        ($name:ident) -> {{
+            cfg_if! {
+                if #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))] {
+                    libc::$name as Word
+                } else {
+                    libc::$name
+                }
+            }
+        }}
+    }
+
     const BASE_TYPES: [(Type, Word); 16] = [
-        (Type::AT_NULL, libc::AT_NULL),
-        (Type::AT_IGNORE, libc::AT_IGNORE),
-        (Type::AT_EXECFD, libc::AT_EXECFD),
-        (Type::AT_PHDR, libc::AT_PHDR),
-        (Type::AT_PHENT, libc::AT_PHENT),
-        (Type::AT_PHNUM, libc::AT_PHNUM),
-        (Type::AT_PAGESZ, libc::AT_PAGESZ),
-        (Type::AT_BASE, libc::AT_BASE),
-        (Type::AT_FLAGS, libc::AT_FLAGS),
-        (Type::AT_ENTRY, libc::AT_ENTRY),
-        (Type::AT_NOTELF, libc::AT_NOTELF),
-        (Type::AT_UID, libc::AT_UID),
-        (Type::AT_EUID, libc::AT_EUID),
-        (Type::AT_GID, libc::AT_GID),
-        (Type::AT_EGID, libc::AT_EGID),
-        (Type::AT_HWCAP2, libc::AT_HWCAP2),
+        (Type::AT_NULL, atc!(NULL)),
+        (Type::AT_IGNORE, atc!(IGNORE)),
+        (Type::AT_EXECFD, atc!(EXECFD)),
+        (Type::AT_PHDR, atc!(PHDR)),
+        (Type::AT_PHENT, atc!(PHENT)),
+        (Type::AT_PHNUM, atc!(PHNUM)),
+        (Type::AT_PAGESZ, atc!(PAGESZ)),
+        (Type::AT_BASE, atc!(BASE)),
+        (Type::AT_FLAGS, atc!(FLAGS)),
+        (Type::AT_ENTRY, atc!(ENTRY)),
+        (Type::AT_NOTELF, atc!(NOTELF)),
+        (Type::AT_UID, atc!(UID)),
+        (Type::AT_EUID, atc!(EUID)),
+        (Type::AT_GID, atc!(GID)),
+        (Type::AT_EGID, atc!(EGID)),
+        (Type::AT_HWCAP2, atc!(HWCAP2)),
     ];
 
     // Commented out types are currently not included in `libc`.
     #[cfg(target_os = "freebsd")]
     const OS_TYPES: [(Type, Word); 8] = [
-        (Type::AT_EXECPATH, libc::AT_EXECPATH as Word),
-        (Type::AT_CANARY, libc::AT_CANARY as Word),
-        // (Type::AT_CANARYLEN, libc::AT_CANARYLEN as Word),
-        (Type::AT_OSRELDATE, libc::AT_OSRELDATE as Word),
-        (Type::AT_NCPUS, libc::AT_NCPUS as Word),
-        // (Type::AT_PAGESIZES, libc::AT_PAGESIZES as Word),
-        // (Type::AT_PAGESIZESLEN, libc::AT_PAGESIZESLEN as Word),
-        (Type::AT_TIMEKEEP, libc::AT_TIMEKEEP as Word),
-        // (Type::AT_STACKPROT, libc::AT_STACKPROT as Word),
-        // (Type::AT_EHDRFLAGS, libc::AT_EHDRFLAGS as Word),
-        (Type::AT_HWCAP, libc::AT_HWCAP as Word),
-        // (Type::AT_BSDFLAGS, libc::AT_BSDFLAGS as Word),
-        // (Type::AT_ARGC, libc::AT_ARGC as Word),
-        // (Type::AT_ARGV, libc::AT_ARGV as Word),
-        // (Type::AT_ENVC, libc::AT_ENVC as Word),
-        // (Type::AT_ENVV, libc::AT_ENVV as Word),
-        // (Type::AT_PS_STRINGS, libc::AT_PS_STRINGS as Word),
-        // (Type::AT_FXRNG, libc::AT_FXRNG as Word),
-        // (Type::AT_KPRELOAD, libc::AT_KPRELOAD as Word),
-        (Type::AT_USRSTACKBASE, libc::AT_USRSTACKBASE as Word),
-        (Type::AT_USRSTACKLIM, libc::AT_USRSTACKLIM as Word),
-        // (Type::AT_COUNT, libc::AT_COUNT as Word),
+        (Type::AT_EXECPATH, atc!(EXECPATH)),
+        (Type::AT_CANARY, atc!(CANARY)),
+        // (Type::AT_CANARYLEN, atc!(CANARYLEN)),
+        (Type::AT_OSRELDATE, atc!(OSRELDATE)),
+        (Type::AT_NCPUS, atc!(NCPUS)),
+        // (Type::AT_PAGESIZES, atc!(PAGESIZES)),
+        // (Type::AT_PAGESIZESLEN, atc!(PAGESIZESLEN)),
+        (Type::AT_TIMEKEEP, atc!(TIMEKEEP)),
+        // (Type::AT_STACKPROT, atc!(STACKPROT)),
+        // (Type::AT_EHDRFLAGS, atc!(EHDRFLAGS)),
+        (Type::AT_HWCAP, atc!(HWCAP)),
+        // (Type::AT_BSDFLAGS, atc!(BSDFLAGS)),
+        // (Type::AT_ARGC, atc!(ARGC)),
+        // (Type::AT_ARGV, atc!(ARGV)),
+        // (Type::AT_ENVC, atc!(ENVC)),
+        // (Type::AT_ENVV, atc!(ENVV)),
+        // (Type::AT_PS_STRINGS, atc!(PS_STRINGS)),
+        // (Type::AT_FXRNG, atc!(FXRNG)),
+        // (Type::AT_KPRELOAD, atc!(KPRELOAD)),
+        (Type::AT_USRSTACKBASE, atc!(USRSTACKBASE)),
+        (Type::AT_USRSTACKLIM, atc!(USRSTACKLIM)),
+        // (Type::AT_COUNT, atc!(COUNT)),
     ];
 
     // Commented out types are currently not included in `libc`.
     #[cfg(target_os = "linux")]
     const OS_TYPES: [(Type, Word); 8] = [
-        (Type::AT_PLATFORM, libc::AT_PLATFORM),
-        (Type::AT_HWCAP, libc::AT_HWCAP),
-        (Type::AT_CLKTCK, libc::AT_CLKTCK),
-        // (Type::AT_FPUCW, libc::AT_FPUCW),
-        // (Type::AT_DCACHEBSIZE, libc::AT_DCACHEBSIZE),
-        // (Type::AT_ICACHEBSIZE, libc::AT_ICACHEBSIZE),
-        // (Type::AT_UCACHEBSIZE, libc::AT_UCACHEBSIZE),
-        // (Type::AT_IGNOREPPC, libc::AT_IGNOREPPC),
-        (Type::AT_SECURE, libc::AT_SECURE),
-        (Type::AT_BASE_PLATFORM, libc::AT_BASE_PLATFORM),
-        (Type::AT_RANDOM, libc::AT_RANDOM),
-        // (Type::AT_RSEQ_FEATURE_SIZE, libc::AT_RSEQ_FEATURE_SIZE),
-        // (Type::AT_RSEQ_ALIGN, libc::AT_RSEQ_ALIGN),
-        // (Type::AT_HWCAP3, libc::AT_HWCAP3),
-        // (Type::AT_HWCAP4, libc::AT_HWCAP4),
-        (Type::AT_EXECFN, libc::AT_EXECFN),
-        // (Type::AT_SYSINFO, libc::AT_SYSINFO),
-        (Type::AT_SYSINFO_EHDR, libc::AT_SYSINFO_EHDR),
-        // (Type::AT_L1I_CACHESHAPE, libc::AT_L1I_CACHESHAPE),
-        // (Type::AT_L1D_CACHESHAPE, libc::AT_L1D_CACHESHAPE),
-        // (Type::AT_L2_CACHESHAPE, libc::AT_L2_CACHESHAPE),
-        // (Type::AT_L3_CACHESHAPE, libc::AT_L3_CACHESHAPE),
-        // (Type::AT_L1I_CACHESIZE, libc::AT_L1I_CACHESIZE),
-        // (Type::AT_L1I_CACHEGEOMETRY, libc::AT_L1I_CACHEGEOMETRY),
-        // (Type::AT_L1D_CACHESIZE, libc::AT_L1D_CACHESIZE),
-        // (Type::AT_L1D_CACHEGEOMETRY, libc::AT_L1D_CACHEGEOMETRY),
-        // (Type::AT_L2_CACHESIZE, libc::AT_L2_CACHESIZE),
-        // (Type::AT_L2_CACHEGEOMETRY, libc::AT_L2_CACHEGEOMETRY),
-        // (Type::AT_L3_CACHESIZE, libc::AT_L3_CACHESIZE),
-        // (Type::AT_L3_CACHEGEOMETRY, libc::AT_L3_CACHEGEOMETRY),
-        // (Type::AT_MINSIGSTKSZ, libc::AT_MINSIGSTKSZ),
+        (Type::AT_PLATFORM, atc!(PLATFORM)),
+        (Type::AT_HWCAP, atc!(HWCAP)),
+        (Type::AT_CLKTCK, atc!(CLKTCK)),
+        // (Type::AT_FPUCW, atc!(FPUCW)),
+        // (Type::AT_DCACHEBSIZE, atc!(DCACHEBSIZE)),
+        // (Type::AT_ICACHEBSIZE, atc!(ICACHEBSIZE)),
+        // (Type::AT_UCACHEBSIZE, atc!(UCACHEBSIZE)),
+        // (Type::AT_IGNOREPPC, atc!(IGNOREPPC)),
+        (Type::AT_SECURE, atc!(SECURE)),
+        (Type::AT_BASE_PLATFORM, atc!(BASE_PLATFORM)),
+        (Type::AT_RANDOM, atc!(RANDOM)),
+        // (Type::AT_RSEQ_FEATURE_SIZE, atc!(RSEQ_FEATURE_SIZE)),
+        // (Type::AT_RSEQ_ALIGN, atc!(RSEQ_ALIGN)),
+        // (Type::AT_HWCAP3, atc!(HWCAP3)),
+        // (Type::AT_HWCAP4, atc!(HWCAP4)),
+        (Type::AT_EXECFN, atc!(EXECFN)),
+        // (Type::AT_SYSINFO, atc!(SYSINFO)),
+        (Type::AT_SYSINFO_EHDR, atc!(SYSINFO_EHDR)),
+        // (Type::AT_L1I_CACHESHAPE, atc!(L1I_CACHESHAPE)),
+        // (Type::AT_L1D_CACHESHAPE, atc!(L1D_CACHESHAPE)),
+        // (Type::AT_L2_CACHESHAPE, atc!(L2_CACHESHAPE)),
+        // (Type::AT_L3_CACHESHAPE, atc!(L3_CACHESHAPE)),
+        // (Type::AT_L1I_CACHESIZE, atc!(L1I_CACHESIZE)),
+        // (Type::AT_L1I_CACHEGEOMETRY, atc!(L1I_CACHEGEOMETRY)),
+        // (Type::AT_L1D_CACHESIZE, atc!(L1D_CACHESIZE)),
+        // (Type::AT_L1D_CACHEGEOMETRY, atc!(L1D_CACHEGEOMETRY)),
+        // (Type::AT_L2_CACHESIZE, atc!(L2_CACHESIZE)),
+        // (Type::AT_L2_CACHEGEOMETRY, atc!(L2_CACHEGEOMETRY)),
+        // (Type::AT_L3_CACHESIZE, atc!(L3_CACHESIZE)),
+        // (Type::AT_L3_CACHEGEOMETRY, atc!(L3_CACHEGEOMETRY)),
+        // (Type::AT_MINSIGSTKSZ, atc!(MINSIGSTKSZ)),
     ];
 
     #[cfg(target_os = "linux")]
@@ -758,7 +770,7 @@ mod tests {
             assert_eq!(got.0, want as Word);
 
             let got = getauxval(Type::AT_HWCAP);
-            let want = sys_getauxval(libc::AT_HWCAP);
+            let want = sys_getauxval(atc!(HWCAP));
             println!(" got = {got:?}");
             println!("want = {want:?}");
             assert_eq!(got, want);
