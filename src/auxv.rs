@@ -558,10 +558,10 @@ mod rt {
                 static _rtld_global_ro: *const RtldGlobal;
                 //static _dl_auxv: *const AuxVal;
             }
-            if !_rtld_global_ro.is_null() {
-                println!("hwcap={}", (*_rtld_global_ro)._dl_hwcap);
-                return (*_rtld_global_ro)._dl_auxv;
-            }
+            // if !_rtld_global_ro.is_null() {
+            //     println!("hwcap={}", (*_rtld_global_ro)._dl_hwcap);
+            //     return (*_rtld_global_ro)._dl_auxv;
+            // }
         }
         let mut ptr = AUXV.load(Ordering::Relaxed);
         if ptr.is_null() {
