@@ -124,8 +124,7 @@ impl<'a> IntoIterator for &'a AuxVec {
     type IntoIter = slice::Iter<'a, AuxVal>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-        //self.0.iter()
+        self.0.iter()
     }
 }
 
