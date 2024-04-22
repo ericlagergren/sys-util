@@ -578,7 +578,8 @@ mod rt {
         extern "C" {
             static _rtld_global_ro: RtldGlobal;
         }
-        return _rtld_global_ro._dl_auxv;
+        // SAFETY: TODO
+        unsafe { _rtld_global_ro._dl_auxv }
     }
 
     /// Finds the auxiliary vector using the process stack.
