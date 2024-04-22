@@ -1,4 +1,4 @@
-//! System utilities.
+//! ELF auxiliary vector support.
 
 #![cfg_attr(docs, feature(doc_cfg))]
 //#![cfg_attr(not(any(feature = "std", test)), no_std)]
@@ -27,4 +27,6 @@
     unused_qualifications
 )]
 
-pub mod auxvec;
+mod auxv;
+
+pub use auxv::*;

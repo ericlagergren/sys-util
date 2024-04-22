@@ -1,9 +1,8 @@
-//! ELF auxiliary vector support.
-
 // TODO: /proc/self/auxv
 
 use core::{
     fmt::{self, Display},
+    ops::Deref,
     slice,
 };
 
@@ -22,16 +21,9 @@ cfg_if! {
 }
 
 /// See libc's `getauxval`.
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "illumos",
-    target_os = "linux",
-    target_os = "netbsd",
-    target_os = "solaris",
-))]
+#[cfg(any(freebsdish, linuxish, netbsdish, solarish))]
 #[cfg_attr(
-    docs,
+    doc,
     doc(cfg(any(
         target_os = "dragonfly",
         target_os = "freebsd",
@@ -63,14 +55,7 @@ pub struct AuxVec([AuxVal]);
 
 impl AuxVec {
     /// Returns the auxiliary vector from the process stack.
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "illumos",
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "solaris",
-    ))]
+    #[cfg(any(freebsdish, linuxish, netbsdish, solarish))]
     #[cfg_attr(
         docs,
         doc(cfg(any(
@@ -126,6 +111,14 @@ impl AuxVec {
     }
 }
 
+impl Deref for AuxVec {
+    type Target = [AuxVal];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl<'a> IntoIterator for &'a AuxVec {
     type Item = &'a AuxVal;
     type IntoIter = slice::Iter<'a, AuxVal>;
@@ -135,6 +128,7 @@ impl<'a> IntoIterator for &'a AuxVec {
     }
 }
 
+/// The `#` flag prints the vector in `LD_SHOW_AUXV=1` format.
 impl Display for AuxVec {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for value in self {
@@ -159,7 +153,22 @@ pub struct AuxVal {
 }
 
 impl AuxVal {
-    #[cfg(target_os = "linux")]
+    #[cfg(freebsdish)]
+    fn write_val_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.key {
+            Type::AT_PHENT
+            | Type::AT_PHNUM
+            | Type::AT_PAGESZ
+            | Type::AT_UID
+            | Type::AT_EUID
+            | Type::AT_GID
+            | Type::AT_EGID
+            | Type::AT_STACKPROT => self.val.fmt(f),
+            _ => self.write_val_hex(f),
+        }
+    }
+
+    #[cfg(linuxish)]
     fn write_val_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.key {
             Type::AT_PHENT
@@ -189,22 +198,7 @@ impl AuxVal {
         }
     }
 
-    #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-    fn write_val_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.key {
-            Type::AT_PHENT
-            | Type::AT_PHNUM
-            | Type::AT_PAGESZ
-            | Type::AT_UID
-            | Type::AT_EUID
-            | Type::AT_GID
-            | Type::AT_EGID
-            | Type::AT_STACKPROT => self.val.fmt(f),
-            _ => self.write_val_hex(f),
-        }
-    }
-
-    #[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux")))]
+    #[cfg(not(any(freebsdish, linuxish)))]
     fn write_val_alt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.key {
             Type::AT_PHENT
@@ -274,7 +268,56 @@ impl Type {
     pub const AT_HWCAP2: Self = Self(26);
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(freebsdish))]
+#[cfg_attr(docs, doc(cfg(any(target_os = "dragonfly", target_os = "freebsd"))))]
+impl Type {
+    /// `AT_EXECPATH`.
+    pub const AT_EXECPATH: Self = Self(15);
+    /// `AT_CANARY`.
+    pub const AT_CANARY: Self = Self(16);
+    /// `AT_CANARYLEN`.
+    pub const AT_CANARYLEN: Self = Self(17);
+    /// `AT_OSRELDATE`.
+    pub const AT_OSRELDATE: Self = Self(18);
+    /// `AT_NCPUS`.
+    pub const AT_NCPUS: Self = Self(19);
+    /// `AT_PAGESIZES`.
+    pub const AT_PAGESIZES: Self = Self(20);
+    /// `AT_PAGESIZESLEN`.
+    pub const AT_PAGESIZESLEN: Self = Self(21);
+    /// `AT_TIMEKEEP`.
+    pub const AT_TIMEKEEP: Self = Self(22);
+    /// `AT_STACKPROT`.
+    pub const AT_STACKPROT: Self = Self(23);
+    /// `AT_EHDRFLAGS`.
+    pub const AT_EHDRFLAGS: Self = Self(24);
+    /// `AT_HWCAP`.
+    pub const AT_HWCAP: Self = Self(25);
+    /// `AT_BSDFLAGS`.
+    pub const AT_BSDFLAGS: Self = Self(27);
+    /// `AT_ARGC`.
+    pub const AT_ARGC: Self = Self(28);
+    /// `AT_ARGV`.
+    pub const AT_ARGV: Self = Self(29);
+    /// `AT_ENVC`.
+    pub const AT_ENVC: Self = Self(30);
+    /// `AT_ENVV`.
+    pub const AT_ENVV: Self = Self(31);
+    /// `AT_PS_STRINGS`.
+    pub const AT_PS_STRINGS: Self = Self(32);
+    /// `AT_FXRNG`.
+    pub const AT_FXRNG: Self = Self(33);
+    /// `AT_KPRELOAD`.
+    pub const AT_KPRELOAD: Self = Self(34);
+    /// `AT_USRSTACKBASE`.
+    pub const AT_USRSTACKBASE: Self = Self(35);
+    /// `AT_USRSTACKLIM`.
+    pub const AT_USRSTACKLIM: Self = Self(36);
+    /// `AT_COUNT`.
+    pub const AT_COUNT: Self = Self(37);
+}
+
+#[cfg(linuxish)]
 #[cfg_attr(docs, doc(cfg(target_os = "linux")))]
 impl Type {
     /// `AT_PLATFORM`.
@@ -332,7 +375,7 @@ impl Type {
     pub const AT_MINSIGSTKSZ: Self = Self(51);
 }
 
-#[cfg(all(target_os = "linux", target_arch = "powerpc"))]
+#[cfg(all(linuxish, target_arch = "powerpc"))]
 #[cfg_attr(docs, doc(cfg(all(target_os = "linux", target_arch = "powerpc"))))]
 impl Type {
     /// `AT_FPUCW`.
@@ -345,55 +388,6 @@ impl Type {
     pub const AT_UCACHEBSIZE: Self = Self(21);
     /// `AT_IGNOREPPC`.
     pub const AT_IGNOREPPC: Self = Self(22);
-}
-
-#[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
-#[cfg_attr(docs, doc(cfg(any(target_os = "dragonfly", target_os = "freebsd"))))]
-impl Type {
-    /// `AT_EXECPATH`.
-    pub const AT_EXECPATH: Self = Self(15);
-    /// `AT_CANARY`.
-    pub const AT_CANARY: Self = Self(16);
-    /// `AT_CANARYLEN`.
-    pub const AT_CANARYLEN: Self = Self(17);
-    /// `AT_OSRELDATE`.
-    pub const AT_OSRELDATE: Self = Self(18);
-    /// `AT_NCPUS`.
-    pub const AT_NCPUS: Self = Self(19);
-    /// `AT_PAGESIZES`.
-    pub const AT_PAGESIZES: Self = Self(20);
-    /// `AT_PAGESIZESLEN`.
-    pub const AT_PAGESIZESLEN: Self = Self(21);
-    /// `AT_TIMEKEEP`.
-    pub const AT_TIMEKEEP: Self = Self(22);
-    /// `AT_STACKPROT`.
-    pub const AT_STACKPROT: Self = Self(23);
-    /// `AT_EHDRFLAGS`.
-    pub const AT_EHDRFLAGS: Self = Self(24);
-    /// `AT_HWCAP`.
-    pub const AT_HWCAP: Self = Self(25);
-    /// `AT_BSDFLAGS`.
-    pub const AT_BSDFLAGS: Self = Self(27);
-    /// `AT_ARGC`.
-    pub const AT_ARGC: Self = Self(28);
-    /// `AT_ARGV`.
-    pub const AT_ARGV: Self = Self(29);
-    /// `AT_ENVC`.
-    pub const AT_ENVC: Self = Self(30);
-    /// `AT_ENVV`.
-    pub const AT_ENVV: Self = Self(31);
-    /// `AT_PS_STRINGS`.
-    pub const AT_PS_STRINGS: Self = Self(32);
-    /// `AT_FXRNG`.
-    pub const AT_FXRNG: Self = Self(33);
-    /// `AT_KPRELOAD`.
-    pub const AT_KPRELOAD: Self = Self(34);
-    /// `AT_USRSTACKBASE`.
-    pub const AT_USRSTACKBASE: Self = Self(35);
-    /// `AT_USRSTACKLIM`.
-    pub const AT_USRSTACKLIM: Self = Self(36);
-    /// `AT_COUNT`.
-    pub const AT_COUNT: Self = Self(37);
 }
 
 impl Type {
@@ -428,51 +422,7 @@ impl Type {
         Some(s)
     }
 
-    #[cfg(target_os = "linux")]
-    const fn to_str_os(self) -> Option<&'static str> {
-        let s = match self {
-            Self::AT_PLATFORM => "AT_PLATFORM",
-            Self::AT_HWCAP => "AT_HWCAP",
-            Self::AT_CLKTCK => "AT_CLKTCK",
-            #[cfg(feature = "esoteric")]
-            Self::AT_FPUCW => "AT_FPUCW",
-            #[cfg(feature = "esoteric")]
-            Self::AT_DCACHEBSIZE => "AT_DCACHEBSIZE",
-            #[cfg(feature = "esoteric")]
-            Self::AT_ICACHEBSIZE => "AT_ICACHEBSIZE",
-            #[cfg(feature = "esoteric")]
-            Self::AT_UCACHEBSIZE => "AT_UCACHEBSIZE",
-            #[cfg(feature = "esoteric")]
-            Self::AT_IGNOREPPC => "AT_IGNOREPPC",
-            Self::AT_SECURE => "AT_SECURE",
-            Self::AT_BASE_PLATFORM => "AT_BASE_PLATFORM",
-            Self::AT_RANDOM => "AT_RANDOM",
-            Self::AT_RSEQ_FEATURE_SIZE => "AT_RSEQ_FEATURE_SIZE",
-            Self::AT_RSEQ_ALIGN => "AT_RSEQ_ALIGN",
-            Self::AT_HWCAP3 => "AT_HWCAP3",
-            Self::AT_HWCAP4 => "AT_HWCAP4",
-            Self::AT_EXECFN => "AT_EXECFN",
-            Self::AT_SYSINFO => "AT_SYSINFO",
-            Self::AT_SYSINFO_EHDR => "AT_SYSINFO_EHDR",
-            Self::AT_L1I_CACHESHAPE => "AT_L1I_CACHESHAPE",
-            Self::AT_L1D_CACHESHAPE => "AT_L1D_CACHESHAPE",
-            Self::AT_L2_CACHESHAPE => "AT_L2_CACHESHAPE",
-            Self::AT_L3_CACHESHAPE => "AT_L3_CACHESHAPE",
-            Self::AT_L1I_CACHESIZE => "AT_L1I_CACHESIZE",
-            Self::AT_L1I_CACHEGEOMETRY => "AT_L1I_CACHEGEOMETRY",
-            Self::AT_L1D_CACHESIZE => "AT_L1D_CACHESIZE",
-            Self::AT_L1D_CACHEGEOMETRY => "AT_L1D_CACHEGEOMETRY",
-            Self::AT_L2_CACHESIZE => "AT_L2_CACHESIZE",
-            Self::AT_L2_CACHEGEOMETRY => "AT_L2_CACHEGEOMETRY",
-            Self::AT_L3_CACHESIZE => "AT_L3_CACHESIZE",
-            Self::AT_L3_CACHEGEOMETRY => "AT_L3_CACHEGEOMETRY",
-            Self::AT_MINSIGSTKSZ => "AT_MINSIGSTKSZ",
-            _ => return None,
-        };
-        Some(s)
-    }
-
-    #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))]
+    #[cfg(freebsdish)]
     const fn to_str_os(self) -> Option<&'static str> {
         let s = match self {
             Self::AT_EXECPATH => "AT_EXECPATH",
@@ -502,7 +452,54 @@ impl Type {
         Some(s)
     }
 
-    #[cfg(not(any(target_os = "dragonfly", target_os = "freebsd", target_os = "linux")))]
+    #[cfg(linuxish)]
+    const fn to_str_os(self) -> Option<&'static str> {
+        let s = match self {
+            Self::AT_PLATFORM => "AT_PLATFORM",
+            Self::AT_HWCAP => "AT_HWCAP",
+            Self::AT_CLKTCK => "AT_CLKTCK",
+
+            // PPC
+            #[cfg(target_arch = "powerpc")]
+            Self::AT_FPUCW => "AT_FPUCW",
+            #[cfg(target_arch = "powerpc")]
+            Self::AT_DCACHEBSIZE => "AT_DCACHEBSIZE",
+            #[cfg(target_arch = "powerpc")]
+            Self::AT_ICACHEBSIZE => "AT_ICACHEBSIZE",
+            #[cfg(target_arch = "powerpc")]
+            Self::AT_UCACHEBSIZE => "AT_UCACHEBSIZE",
+            #[cfg(target_arch = "powerpc")]
+            Self::AT_IGNOREPPC => "AT_IGNOREPPC",
+
+            Self::AT_SECURE => "AT_SECURE",
+            Self::AT_BASE_PLATFORM => "AT_BASE_PLATFORM",
+            Self::AT_RANDOM => "AT_RANDOM",
+            Self::AT_RSEQ_FEATURE_SIZE => "AT_RSEQ_FEATURE_SIZE",
+            Self::AT_RSEQ_ALIGN => "AT_RSEQ_ALIGN",
+            Self::AT_HWCAP3 => "AT_HWCAP3",
+            Self::AT_HWCAP4 => "AT_HWCAP4",
+            Self::AT_EXECFN => "AT_EXECFN",
+            Self::AT_SYSINFO => "AT_SYSINFO",
+            Self::AT_SYSINFO_EHDR => "AT_SYSINFO_EHDR",
+            Self::AT_L1I_CACHESHAPE => "AT_L1I_CACHESHAPE",
+            Self::AT_L1D_CACHESHAPE => "AT_L1D_CACHESHAPE",
+            Self::AT_L2_CACHESHAPE => "AT_L2_CACHESHAPE",
+            Self::AT_L3_CACHESHAPE => "AT_L3_CACHESHAPE",
+            Self::AT_L1I_CACHESIZE => "AT_L1I_CACHESIZE",
+            Self::AT_L1I_CACHEGEOMETRY => "AT_L1I_CACHEGEOMETRY",
+            Self::AT_L1D_CACHESIZE => "AT_L1D_CACHESIZE",
+            Self::AT_L1D_CACHEGEOMETRY => "AT_L1D_CACHEGEOMETRY",
+            Self::AT_L2_CACHESIZE => "AT_L2_CACHESIZE",
+            Self::AT_L2_CACHEGEOMETRY => "AT_L2_CACHEGEOMETRY",
+            Self::AT_L3_CACHESIZE => "AT_L3_CACHESIZE",
+            Self::AT_L3_CACHEGEOMETRY => "AT_L3_CACHEGEOMETRY",
+            Self::AT_MINSIGSTKSZ => "AT_MINSIGSTKSZ",
+            _ => return None,
+        };
+        Some(s)
+    }
+
+    #[cfg(not(any(freebsdish, linuxish)))]
     const fn to_str_os(self) -> Option<&'static str> {
         None
     }
@@ -524,14 +521,7 @@ impl PartialEq<Word> for Type {
     }
 }
 
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "illumos",
-    target_os = "linux",
-    target_os = "netbsd",
-    target_os = "solaris",
-))]
+#[cfg(any(freebsdish, linuxish, netbsdish, solarish))]
 mod rt {
     use core::{
         ffi::c_char,
@@ -587,7 +577,7 @@ mod rt {
         // SAFETY: we just took the address of `environ`.
         AtomicPtr::new(unsafe { ptr::addr_of!(environ).cast_mut() });
 
-    #[cfg(any(target_os = "freebsd", target_env = "gnu"))]
+    #[cfg(any(freebsdish, target_env = "gnu"))]
     mod init_array {
         use core::{
             ffi::c_int,
@@ -617,17 +607,7 @@ mod rt {
     }
 }
 
-#[cfg(all(
-    test,
-    any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "illumos",
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "solaris",
-    )
-))]
+#[cfg(all(test, freebsdish, linuxish, netbsdish, solarish))]
 mod tests {
     use core::{ffi::c_ulong, mem};
 
@@ -652,27 +632,33 @@ mod tests {
         }};
     }
 
+    macro_rules! atype {
+        ($name:ident) => {{
+            (Type::$name, atc!($name)),
+        }}
+    }
+
     const BASE_TYPES: [(Type, Word); 16] = [
-        (Type::AT_NULL, atc!(AT_NULL)),
-        (Type::AT_IGNORE, atc!(AT_IGNORE)),
-        (Type::AT_EXECFD, atc!(AT_EXECFD)),
-        (Type::AT_PHDR, atc!(AT_PHDR)),
-        (Type::AT_PHENT, atc!(AT_PHENT)),
-        (Type::AT_PHNUM, atc!(AT_PHNUM)),
-        (Type::AT_PAGESZ, atc!(AT_PAGESZ)),
-        (Type::AT_BASE, atc!(AT_BASE)),
-        (Type::AT_FLAGS, atc!(AT_FLAGS)),
-        (Type::AT_ENTRY, atc!(AT_ENTRY)),
-        (Type::AT_NOTELF, atc!(AT_NOTELF)),
-        (Type::AT_UID, atc!(AT_UID)),
-        (Type::AT_EUID, atc!(AT_EUID)),
-        (Type::AT_GID, atc!(AT_GID)),
-        (Type::AT_EGID, atc!(AT_EGID)),
-        (Type::AT_HWCAP2, atc!(AT_HWCAP2)),
+        atype!(AT_NULL),
+        atype!(AT_IGNORE),
+        atype!(AT_EXECFD),
+        atype!(AT_PHDR),
+        atype!(AT_PHENT),
+        atype!(AT_PHNUM),
+        atype!(AT_PAGESZ),
+        atype!(AT_BASE),
+        atype!(AT_FLAGS),
+        atype!(AT_ENTRY),
+        atype!(AT_NOTELF),
+        atype!(AT_UID),
+        atype!(AT_EUID),
+        atype!(AT_GID),
+        atype!(AT_EGID),
+        atype!(AT_HWCAP2),
     ];
 
     // Commented out types are currently not included in `libc`.
-    #[cfg(target_os = "freebsd")]
+    #[cfg(freebsdish)]
     const OS_TYPES: [(Type, Word); 8] = [
         (Type::AT_EXECPATH, atc!(AT_EXECPATH)),
         (Type::AT_CANARY, atc!(AT_CANARY)),
@@ -699,7 +685,7 @@ mod tests {
     ];
 
     // Commented out types are currently not included in `libc`.
-    #[cfg(target_os = "linux")]
+    #[cfg(linuxish)]
     const OS_TYPES: [(Type, Word); 8] = [
         (Type::AT_PLATFORM, atc!(AT_PLATFORM)),
         (Type::AT_HWCAP, atc!(AT_HWCAP)),
@@ -734,7 +720,7 @@ mod tests {
         // (Type::AT_MINSIGSTKSZ, atc!(AT_MINSIGSTKSZ)),
     ];
 
-    #[cfg(target_os = "linux")]
+    #[cfg(linuxish)]
     fn sys_getauxval(type_: Word) -> Option<c_ulong> {
         const_assert!(mem::size_of::<c_ulong>() == mem::size_of::<Word>());
 
