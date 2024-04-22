@@ -530,11 +530,13 @@ mod rt {
         unsafe {
             use core::ffi::{c_char, c_int, c_ulong};
 
+            #[derive(Debug)]
             #[repr(C)]
             struct RScopeElem {
                 _r_list: *mut *mut (),
                 _r_nlist: c_int,
             }
+            #[derive(Debug)]
             #[repr(C)]
             struct RtldGlobal {
                 _dl_debug_mask: c_int,
@@ -558,7 +560,7 @@ mod rt {
                 static _rtld_global_ro: *const RtldGlobal;
                 //static _dl_auxv: *const AuxVal;
             }
-            println!("{:?}", _rtld_global_ro);
+            println!("{:?}", *_rtld_global_ro);
             // if !_rtld_global_ro.is_null() {
             //     println!("hwcap={}", (*_rtld_global_ro)._dl_hwcap);
             //     return (*_rtld_global_ro)._dl_auxv;
