@@ -2,7 +2,7 @@
 
 use core::ffi::c_char;
 
-use super::sys::{find_auxv, AuxVal};
+use super::{auxv::AuxVal, sys::find_auxv};
 
 pub fn auxv_via_argv() -> *const AuxVal {
     extern "C" {
