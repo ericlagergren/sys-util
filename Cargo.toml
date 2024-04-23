@@ -7,6 +7,7 @@ edition = "2021"
 default = ["auxvec"]
 
 auxvec = []
+rtld = []
 
 [dependencies]
 cfg-if = { version = "1.0.0" }

@@ -69,7 +69,7 @@ impl AuxVec {
     pub fn from_static() -> &'static Self {
         // SAFETY: `ptr` came from `rt::auxv`, which returns
         // a suitable pointer.
-        unsafe { Self::from_ptr(rt::auxv()) }
+        unsafe { Self::from_ptr(super::sys::auxv()) }
     }
 
     /// Creates an `AuxVec` from a raw pointer to an auxiliary
@@ -512,132 +512,6 @@ impl Display for Type {
 impl PartialEq<Word> for Type {
     fn eq(&self, other: &Word) -> bool {
         PartialEq::eq(&self.0, other)
-    }
-}
-
-#[cfg(have_auxv)]
-mod rt {
-    use core::{
-        ffi::c_char,
-        ptr,
-        sync::atomic::{AtomicPtr, Ordering},
-    };
-
-    use super::AuxVal;
-
-    /// Returns a pointer to the auxiliary vector.
-    pub fn auxv() -> *const AuxVal {
-        let ptr = rtld_auxv();
-        if !ptr.is_null() {
-            return ptr;
-        }
-        let mut ptr = AUXV.load(Ordering::Relaxed);
-        if ptr.is_null() {
-            // SAFETY: `env` contains a valid process stack.
-            ptr = unsafe { find_auxv(envp()) } as _;
-
-            if let Err(got) =
-                AUXV.compare_exchange(ptr::null_mut(), ptr, Ordering::SeqCst, Ordering::Relaxed)
-            {
-                debug_assert_eq!(got, ptr);
-            };
-        }
-        ptr
-    }
-    static AUXV: AtomicPtr<AuxVal> = AtomicPtr::new(ptr::null_mut());
-
-    fn rtld_auxv() -> *const AuxVal {
-        use core::ffi::{c_char, c_int, c_ulong};
-
-        #[derive(Debug)]
-        #[repr(C)]
-        struct RScopeElem {
-            _r_list: *mut *mut (),
-            _r_nlist: c_int,
-        }
-        #[derive(Debug)]
-        #[repr(C)]
-        struct RtldGlobal {
-            _dl_debug_mask: c_int,
-            _dl_platform: *const c_char,
-            _dl_platformlen: usize,
-            _dl_pagesize: usize,
-            _dl_minsigstacksize: usize,
-            _dl_inhibit_cache: c_int,
-            _dl_initial_searchlist: RScopeElem,
-            _dl_clktck: c_int,
-            _dl_verbose: c_int,
-            _dl_debug_fd: c_int,
-            _dl_lazy: c_int,
-            _dl_bind_not: c_int,
-            _dl_dynamic_weak: c_int,
-            _dl_fpu_control: c_ulong,
-            _dl_hwcap: u64,
-            _dl_auxv: *const AuxVal,
-        }
-        extern "C" {
-            static _rtld_global_ro: RtldGlobal;
-        }
-        // SAFETY: TODO
-        unsafe { _rtld_global_ro._dl_auxv }
-    }
-
-    /// Finds the auxiliary vector using the process stack.
-    ///
-    /// # Safety
-    ///
-    /// The process stack must be correct.
-    unsafe fn find_auxv(envp: *const *const u8) -> *const AuxVal {
-        let mut ptr = envp;
-        while !(*ptr).is_null() {
-            ptr = ptr.add(1);
-        }
-        ptr.add(1).cast()
-    }
-
-    fn envp() -> *const *const u8 {
-        #[cfg(any(freebsdish, target_env = "gnu"))]
-        if let Some(envp) = init_array::envp() {
-            return envp;
-        }
-        // SAFETY: we just took the address of `environ`.
-        let ptr = unsafe { *ENVIRON.load(Ordering::Relaxed) };
-        ptr.cast()
-    }
-    extern "C" {
-        static mut environ: *const *const c_char;
-    }
-    static ENVIRON: AtomicPtr<*const *const c_char> =
-        // SAFETY: we just took the address of `environ`.
-        AtomicPtr::new(unsafe { ptr::addr_of!(environ).cast_mut() });
-
-    #[cfg(any(freebsdish, target_env = "gnu"))]
-    mod init_array {
-        use core::{
-            ffi::c_int,
-            ptr,
-            sync::atomic::{AtomicBool, AtomicPtr, Ordering},
-        };
-
-        pub fn envp() -> Option<*const *const u8> {
-            if INIT.load(Ordering::Relaxed) {
-                Some(ENVP.load(Ordering::Relaxed))
-            } else {
-                None
-            }
-        }
-
-        static INIT: AtomicBool = AtomicBool::new(false);
-        static ENVP: AtomicPtr<*const u8> = AtomicPtr::new(ptr::null_mut());
-
-        #[link_section = ".init_array.00099"]
-        #[used]
-        static ARGV_INIT_ARRAY: extern "C" fn(c_int, *const *const u8, *const *const u8) = init;
-
-        extern "C" fn init(_argc: c_int, _argv: *const *const u8, envp: *const *const u8) {
-            ENVP.store(envp.cast_mut(), Ordering::Relaxed);
-            INIT.store(true, Ordering::Relaxed);
-        }
     }
 }
 
