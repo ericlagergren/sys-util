@@ -38,7 +38,7 @@ static AUXV: AtomicPtr<AuxVal> = AtomicPtr::new(ptr::null_mut());
 /// # Safety
 ///
 /// The process stack must be correct.
-unsafe fn find_auxv(envp: *const *const u8) -> *const AuxVal {
+pub(crate) unsafe fn find_auxv(envp: *const *const u8) -> *const AuxVal {
     let mut ptr = envp;
     while !(*ptr).is_null() {
         ptr = ptr.add(1);
