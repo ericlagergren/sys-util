@@ -8,7 +8,9 @@ pub fn auxv_via_argv() -> *const AuxVal {
     extern "C" {
         static _dl_argv: *const *const c_char;
     }
-    let mut ptr = _dl_argv;
+    // SAFETY: fingers crossed that `_dl_argv` is accurate,
+    // etc.
+    let mut ptr = unsafe { _dl_argv };
     while !(*ptr).is_null() {
         ptr = ptr.add(1);
     }
