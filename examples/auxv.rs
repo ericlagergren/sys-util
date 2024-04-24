@@ -10,7 +10,7 @@
 
 use core::{
     ffi::{c_char, c_int, c_void},
-    fmt,
+    fmt::{self, Write},
 };
 
 use sys_auxv::AuxVec;
