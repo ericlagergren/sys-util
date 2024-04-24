@@ -28,9 +28,11 @@ fn envp() -> *const *const u8 {
     let ptr = unsafe { *ENVIRON.load(Ordering::Relaxed) };
     ptr.cast()
 }
+
 extern "C" {
     static mut environ: *const *const c_char;
 }
+
 static ENVIRON: AtomicPtr<*const *const c_char> =
     // SAFETY: we just took the address of `environ`.
     AtomicPtr::new(unsafe { ptr::addr_of!(environ).cast_mut() });

@@ -81,9 +81,10 @@ impl AuxVec {
 
     /// Returns an empty auxiliary vector.
     pub const fn empty() -> &'static Self {
+        let ptr = NonNull::dangling().as_ptr();
         // SAFETY: `ptr` is non-null and suitably aligned and
         // `len` is valid for `ptr`.
-        unsafe { Self::from_raw_parts(NonNull::dangling().as_ptr(), 0) }
+        unsafe { Self::from_raw_parts(ptr, 0) }
     }
 
     /// Creates an `AuxVec` from a raw pointer to an auxiliary
