@@ -28,14 +28,13 @@ impl fmt::Write for Stdout {
             fn write(filedes: c_int, buf: *const c_void, nbyte: usize) -> c_int;
         }
         let mut buf = s.as_bytes();
-        let mut nw = 0;
         while !buf.is_empty() {
             // SAFETY: FFI call, no invariants.
             let ret = unsafe { write(1, buf.as_ptr().cast(), buf.len()) };
             if ret < 0 {
                 return Err(fmt::Error);
             }
-            buf = &mut buf[ret as usize..]
+            buf = &buf[ret as usize..]
         }
         Ok(())
     }
