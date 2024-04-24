@@ -14,8 +14,17 @@ pub(super) fn auxv() -> *const AuxVal {
         }
     }
 
-    let envp = find_term(argv()).add(1);
-    find_term(envp).add(1).cast()
+    let argv = argv();
+    if argv.is_null() {
+        return ptr::null();
+    }
+    // SAFETY: we've checked that `argv` is non-null.
+    let envp = unsafe { find_term(argv).add(1) };
+    if envp.is_null() {
+        return ptr::null();
+    }
+    // SAFETY: we've checked that `ptr` is non-null.
+    unsafe { find_term(envp).add(1) }.cast()
 }
 
 fn argv() -> *const *const u8 {
