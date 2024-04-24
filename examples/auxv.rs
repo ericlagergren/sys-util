@@ -33,10 +33,9 @@ impl fmt::Write for Stdout {
             // SAFETY: FFI call, no invariants.
             let ret = unsafe { write(1, buf.as_ptr().cast(), buf.len()) };
             if ret < 0 {
-                Err(fmt::Error)
-            } else {
-                buf = &mut buf[ret as usize..]
+                return Err(fmt::Error);
             }
+            buf = &mut buf[ret as usize..]
         }
         Ok(())
     }
