@@ -32,7 +32,7 @@ fn argv() -> *const *const u8 {
         static _dl_argv: *const *const c_char;
     }
     // SAFETY: the dynamic linker must have defined `_dl_argv`.
-    unsafe { _dl_argv }
+    unsafe { _dl_argv }.cast()
 }
 
 #[cfg(feature = "rtld")]
