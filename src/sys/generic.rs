@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "glibc", allow(dead_code))]
+
 use core::{
     ffi::c_char,
     ptr,
