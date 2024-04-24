@@ -9,7 +9,7 @@
 ))]
 
 use core::{
-    ffi::{c_char, c_int, c_void},
+    ffi::{c_int, c_void},
     fmt::{self, Write},
 };
 
