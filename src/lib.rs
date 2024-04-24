@@ -28,7 +28,6 @@
 )]
 
 mod auxv;
-mod glibc;
 mod sys;
 
 pub use auxv::*;

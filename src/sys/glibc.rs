@@ -1,27 +1,37 @@
-#![cfg(all(have_auxv, target_env = "gnu"))]
+#![cfg(all(have_auxv, feature = "glibc"))]
 
 use core::ffi::c_char;
 
-use super::{auxv::AuxVal, sys::find_auxv};
+use super::util::find_term;
 
-pub fn auxv_via_argv() -> *const AuxVal {
+/// Returns a pointer to the auxiliary vector.
+pub fn auxv() -> *const AuxVal {
+    #[cfg(feature = "rtld")]
+    {
+        let ptr = rtld::auxv();
+        if !ptr.is_null() {
+            return ptr;
+        }
+    }
+
+    let envp = find_term(argv()).add(1);
+    find_term(envp).add(1).cast()
+}
+
+/// Returns argv.
+fn argv() -> *const *const u8 {
     extern "C" {
         static _dl_argv: *const *const c_char;
     }
-    // SAFETY: fingers crossed that `_dl_argv` is accurate,
-    // etc.
-    let mut ptr = unsafe { _dl_argv };
-    while !(*ptr).is_null() {
-        ptr = ptr.add(1);
-    }
-    find_auxv(ptr.add(1).cast())
+    // SAFETY: the dynamic linker must have defined `_dl_argv`.
+    unsafe { _dl_argv }
 }
 
 #[cfg(feature = "rtld")]
 pub mod rtld {
     use core::ffi::{c_char, c_int, c_ulong};
 
-    pub(crate) unsafe fn auxv() -> *const AuxVal {
+    pub(crate) fn auxv() -> *const AuxVal {
         extern "C" {
             static _rtld_global_ro: RtldGlobal;
         }

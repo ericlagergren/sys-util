@@ -67,7 +67,7 @@ impl AuxVec {
         )))
     )]
     pub fn from_static() -> &'static Self {
-        // SAFETY: `ptr` came from `rt::auxv`, which returns
+        // SAFETY: `ptr` came from `sys::auxv`, which returns
         // a suitable pointer.
         unsafe { Self::from_ptr(super::sys::auxv()) }
     }

@@ -6,13 +6,13 @@ use core::{
     sync::atomic::{AtomicPtr, Ordering},
 };
 
-use super::auxv::AuxVal;
+use super::{auxv::AuxVal, util::find_term};
 
 /// Returns a pointer to the auxiliary vector.
-pub(crate) fn auxv() -> *const AuxVal {
-    #[cfg(all(target_env = "gnu", feature = "rtld"))]
+pub fn auxv() -> *const AuxVal {
+    #[cfg(feature = "glibc")]
     {
-        let ptr = super::glibc::rtld_auxv();
+        let ptr = super::glibc::auxv();
         if !ptr.is_null() {
             return ptr;
         }
@@ -20,8 +20,7 @@ pub(crate) fn auxv() -> *const AuxVal {
 
     let mut ptr = AUXV.load(Ordering::Relaxed);
     if ptr.is_null() {
-        // SAFETY: `env` contains a valid process stack.
-        ptr = unsafe { find_auxv(envp()) } as _;
+        ptr = find_auxv() as _;
 
         if let Err(got) =
             AUXV.compare_exchange(ptr::null_mut(), ptr, Ordering::SeqCst, Ordering::Relaxed)
@@ -33,17 +32,9 @@ pub(crate) fn auxv() -> *const AuxVal {
 }
 static AUXV: AtomicPtr<AuxVal> = AtomicPtr::new(ptr::null_mut());
 
-/// Finds the auxiliary vector using the process stack.
-///
-/// # Safety
-///
-/// The process stack must be correct.
-pub(crate) unsafe fn find_auxv(envp: *const *const u8) -> *const AuxVal {
-    let mut ptr = envp;
-    while !(*ptr).is_null() {
-        ptr = ptr.add(1);
-    }
-    ptr.add(1).cast()
+/// Finds the auxiliary vector using `envp`.
+pub(crate) fn find_auxv() -> *const AuxVal {
+    find_term(envp()).add(1).cast()
 }
 
 fn envp() -> *const *const u8 {
