@@ -17,7 +17,9 @@ use sys_auxv::AuxVec;
 
 fn main() {
     let auxv = AuxVec::from_static();
-    let _ = writeln!(Stdout, "{auxv:#}");
+    for _ in 0..100 {
+        let _ = writeln!(Stdout, "{auxv:#}");
+    }
 }
 
 struct Stdout;
