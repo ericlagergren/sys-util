@@ -6,9 +6,15 @@ use core::{
 
 use super::{util::find_term, AuxVal};
 
-/// Finds the auxiliary vector using `envp`.
+/// Returns a pointer to the auxiliary vector.
 pub(super) fn auxv() -> *const AuxVal {
-    find_term(envp()).add(1).cast()
+    let ptr = envp();
+    if !ptr.is_null() {
+        // SAFETY: we've checked that `ptr` is non-null.
+        unsafe { find_term(ptr) }.add(1).cast()
+    } else {
+        ptr::null()
+    }
 }
 
 fn envp() -> *const *const u8 {
