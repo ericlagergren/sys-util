@@ -1,6 +1,6 @@
 #![cfg(feature = "glibc")]
 
-use core::ffi::c_char;
+use core::{ffi::c_char, ptr};
 
 use super::util::find_term;
 
