@@ -3,6 +3,7 @@
 use core::{
     fmt::{self, Display},
     ops::Deref,
+    ptr::NonNull,
     slice,
 };
 
@@ -67,9 +68,22 @@ impl AuxVec {
         )))
     )]
     pub fn from_static() -> &'static Self {
-        // SAFETY: `ptr` came from `sys::auxv`, which returns
-        // a suitable pointer.
-        unsafe { Self::from_ptr(super::sys::auxv()) }
+        let ptr = super::sys::auxv();
+        if ptr.is_null() {
+            Self::empty()
+        } else {
+            // SAFETY: we just proved that `ptr` is non-null and
+            // `auxv` only returns pointers to valid auxiliary
+            // vectors.
+            unsafe { Self::from_ptr(ptr) }
+        }
+    }
+
+    /// Returns an empty auxiliary vector.
+    pub const fn empty() -> &'static Self {
+        // SAFETY: `ptr` is non-null and suitably aligned and
+        // `len` is valid for `ptr`.
+        unsafe { Self::from_raw_parts(NonNull::dangling().as_ptr(), 0) }
     }
 
     /// Creates an `AuxVec` from a raw pointer to an auxiliary
@@ -96,7 +110,7 @@ impl AuxVec {
     /// # Safety
     ///
     /// Same as [`slice::from_raw_parts`].
-    unsafe fn from_raw_parts(ptr: *const AuxVal, len: usize) -> &'static Self {
+    const unsafe fn from_raw_parts(ptr: *const AuxVal, len: usize) -> &'static Self {
         // SAFETY: see the doc comment.
         let v = unsafe { slice::from_raw_parts(ptr, len) };
         // SAFETY: `[AuxVal]` and `Self` have the same memory

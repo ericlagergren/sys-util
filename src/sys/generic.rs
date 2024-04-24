@@ -1,39 +1,13 @@
-#![cfg(have_auxv)]
-
 use core::{
     ffi::c_char,
     ptr,
     sync::atomic::{AtomicPtr, Ordering},
 };
 
-use super::{auxv::AuxVal, util::find_term};
-
-/// Returns a pointer to the auxiliary vector.
-pub fn auxv() -> *const AuxVal {
-    #[cfg(feature = "glibc")]
-    {
-        let ptr = super::glibc::auxv();
-        if !ptr.is_null() {
-            return ptr;
-        }
-    }
-
-    let mut ptr = AUXV.load(Ordering::Relaxed);
-    if ptr.is_null() {
-        ptr = find_auxv() as _;
-
-        if let Err(got) =
-            AUXV.compare_exchange(ptr::null_mut(), ptr, Ordering::SeqCst, Ordering::Relaxed)
-        {
-            debug_assert_eq!(got, ptr);
-        };
-    }
-    ptr
-}
-static AUXV: AtomicPtr<AuxVal> = AtomicPtr::new(ptr::null_mut());
+use super::{util::find_term, AuxVal};
 
 /// Finds the auxiliary vector using `envp`.
-pub(crate) fn find_auxv() -> *const AuxVal {
+pub(super) fn auxv() -> *const AuxVal {
     find_term(envp()).add(1).cast()
 }
 

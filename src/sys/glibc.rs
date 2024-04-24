@@ -1,11 +1,11 @@
-#![cfg(all(have_auxv, feature = "glibc"))]
+#![cfg(feature = "glibc")]
 
 use core::ffi::c_char;
 
 use super::util::find_term;
 
 /// Returns a pointer to the auxiliary vector.
-pub fn auxv() -> *const AuxVal {
+pub(super) fn auxv() -> *const AuxVal {
     #[cfg(feature = "rtld")]
     {
         let ptr = rtld::auxv();
@@ -18,7 +18,6 @@ pub fn auxv() -> *const AuxVal {
     find_term(envp).add(1).cast()
 }
 
-/// Returns argv.
 fn argv() -> *const *const u8 {
     extern "C" {
         static _dl_argv: *const *const c_char;
