@@ -2,7 +2,7 @@
 
 use core::{ffi::c_char, ptr};
 
-use super::util::find_term;
+use super::{util::find_term, AuxVal};
 
 /// Returns a pointer to the auxiliary vector.
 pub(super) fn auxv() -> *const AuxVal {
