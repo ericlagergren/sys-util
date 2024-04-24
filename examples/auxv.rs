@@ -27,12 +27,17 @@ impl fmt::Write for Stdout {
         extern "C" {
             fn write(filedes: c_int, buf: *const c_void, nbyte: usize) -> c_int;
         }
-        // SAFETY: FFI call, no invariants.
-        let ret = unsafe { write(1, s.as_ptr().cast(), s.len()) };
-        if ret < 0 {
-            Err(fmt::Error)
-        } else {
-            Ok(())
+        let mut buf = s.as_bytes();
+        let mut nw = 0;
+        while !buf.is_empty() {
+            // SAFETY: FFI call, no invariants.
+            let ret = unsafe { write(1, buf.as_ptr().cast(), buf.len()) };
+            if ret < 0 {
+                Err(fmt::Error)
+            } else {
+                buf = &mut buf[ret as usize..]
+            }
         }
+        Ok(())
     }
 }
