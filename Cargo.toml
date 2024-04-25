@@ -21,7 +21,4 @@ name = "auxv"
 
 [profile.example]
 inherits = "release"
-panic = "unwind"
-
-[profile.release]
-panic = "unwind"
+panic = "abort"
