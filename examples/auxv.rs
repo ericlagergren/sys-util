@@ -27,9 +27,9 @@ unsafe extern "C" fn memcpy(dst: *mut c_void, src: *const c_void, n: usize) -> *
 
 #[no_mangle]
 unsafe extern "C" fn memset(dst: *mut c_void, c: c_int, len: usize) -> *mut c_void {
-    let dst: *mut u8 = dst.cast();
+    let ptr: *mut u8 = dst.cast();
     for i in 0..len {
-        dst.add(i).write_volatile(c as u8)
+        ptr.add(i).write_volatile(c as u8)
     }
     dst
 }
