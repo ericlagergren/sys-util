@@ -10,14 +10,14 @@
 ))]
 
 use core::{
-    ffi::{c_int, c_void},
+    ffi::{c_char, c_int, c_void},
     fmt::{self, Write},
 };
 
 use sys_auxv::AuxVec;
 
 #[no_mangle]
-pub extern "C" fn main(_argc: isize, _argv: *const *const u8) -> isize {
+pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
     let auxv = AuxVec::from_static();
     for _ in 0..100 {
         let _ = writeln!(Stdout, "{auxv:#}");
