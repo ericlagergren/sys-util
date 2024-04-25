@@ -1,4 +1,5 @@
 #![no_std]
+#![no_main]
 #![cfg(any(
     target_os = "dragonfly",
     target_os = "freebsd",
@@ -15,11 +16,13 @@ use core::{
 
 use sys_auxv::AuxVec;
 
-fn main() {
+#[no_mangle]
+pub extern "C" fn main(_argc: isize, _argv: *const *const u8) -> isize {
     let auxv = AuxVec::from_static();
     for _ in 0..100 {
         let _ = writeln!(Stdout, "{auxv:#}");
     }
+    0
 }
 
 struct Stdout;
