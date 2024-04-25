@@ -16,6 +16,7 @@ use core::{
 
 use sys_auxv::AuxVec;
 
+#[no_mangle]
 unsafe extern "C" fn memcpy(dst: *mut c_void, src: *const c_void, n: usize) -> *mut c_void {
     for i in 0..n {
         dst.add(i).write_volatile(src.read_volatile())
