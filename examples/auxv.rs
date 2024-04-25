@@ -16,6 +16,13 @@ use core::{
 
 use sys_auxv::AuxVec;
 
+unsafe extern "C" fn memcpy(dst: *mut c_void, src: *const c_void, n: usize) -> *mut c_void {
+    for i in 0..n {
+        dst.add(i).write_volatile(src.read_volatile())
+    }
+    dst
+}
+
 #[no_mangle]
 pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
     let auxv = AuxVec::from_static();
@@ -49,3 +56,6 @@ impl fmt::Write for Stdout {
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
+
+#[lang = "eh_personality"]
+extern "C" fn eh_personality() {}
