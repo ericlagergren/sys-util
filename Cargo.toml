@@ -18,3 +18,7 @@ libc = { version = "0.2.153" }
 
 [[example]]
 name = "auxv"
+
+[profile.example]
+inherits = "release"
+panic = "unwind"
