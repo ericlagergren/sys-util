@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![feature(lang_items)]
 #![cfg(any(
     target_os = "dragonfly",
     target_os = "freebsd",
