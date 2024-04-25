@@ -18,4 +18,3 @@ libc = { version = "0.2.153" }
 
 [[example]]
 name = "auxv"
-crate-type = ["staticlib"]
