@@ -26,6 +26,15 @@ unsafe extern "C" fn memcpy(dst: *mut c_void, src: *const c_void, n: usize) -> *
 }
 
 #[no_mangle]
+unsafe extern "C" fn memset(dst: *mut c_void, c: c_int, len: usize) -> *mut c_void {
+    let dst: *mut u8 = dst.cast();
+    for i in 0..n {
+        dst.add(i).write_volatile(c as u8)
+    }
+    dst
+}
+
+#[no_mangle]
 pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
     let auxv = AuxVec::from_static();
     for _ in 0..100 {
