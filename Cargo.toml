@@ -15,3 +15,7 @@ cfg-if = { version = "1.0.0" }
 
 [dev-dependencies]
 libc = { version = "0.2.153" }
+
+[[example]]
+name = "auxv"
+crate-type = ["staticlib"]
