@@ -79,6 +79,9 @@ unsafe extern "C" fn memset(dst: *mut c_void, c: c_int, len: usize) -> *mut c_vo
 }
 
 #[no_mangle]
+unsafe extern "C" fn _init_tls(_tls: *mut c_void) {}
+
+#[no_mangle]
 pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
     let auxv = AuxVec::from_static();
     for _ in 0..100 {
