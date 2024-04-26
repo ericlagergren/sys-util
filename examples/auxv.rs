@@ -60,6 +60,9 @@ macro_rules! syscall {
     ($trap:expr, $arg1:expr) => {
         syscall3($trap, $arg1.into(), Arg::none(), Arg::none())
     };
+    ($trap:expr, $arg1:expr, $arg2:expr) => {
+        syscall3($trap, $arg1.into(), $arg2.into(), Arg::none())
+    };
     ($trap:expr, $arg1:expr, $arg2:expr, $arg3:expr) => {
         syscall3($trap, $arg1.into(), $arg2.into(), $arg3.into())
     };
@@ -84,12 +87,12 @@ unsafe fn syscall3(trap: i64, a1: Arg, a2: Arg, a3: Arg) -> Result<(i64, i64), E
         out("r9") _,
         out("r10") _,
 
-        // We clobber `dl`.
+        // We clobber `r8b`.
         out("r8b") _,
 
         options(nostack),
     );
-    if ok != 0 {
+    if ok == 0 {
         Ok((r1, r2))
     } else {
         Err(r1)
