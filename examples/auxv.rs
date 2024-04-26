@@ -12,7 +12,45 @@ use core::{
 
 use sys_auxv::AuxVec;
 
-unsafe fn syscall(trap: i64, a1: i64, a2: i64, a3: i64) -> Result<(i64, i64), i64> {
+const SYS_EXIT: i64 = 1;
+const SYS_WRITE: i64 = 1;
+
+#[repr(transparent)]
+struct Arg(*mut c_void);
+
+impl Arg {
+    const fn none() -> Self {
+        Self(0 as usize as _)
+    }
+}
+
+impl From<usize> for Arg {
+    fn from(v: usize) -> Self {
+        Self(v as usize)
+    }
+}
+
+impl From<c_int> for Arg {
+    fn from(v: c_int) -> Self {
+        Self(v as usize as _)
+    }
+}
+
+impl<T> From<*mut T> for Arg {
+    fn from(v: *mut T) -> Self {
+        Self(v as _)
+    }
+}
+
+impl<T> From<*const T> for Arg {
+    fn from(v: *const T) -> Self {
+        Self(v as _)
+    }
+}
+
+type Errno = i64;
+
+unsafe fn syscall3(trap: i64, a1: Arg, a2: Arg, a3: Arg) -> Result<(i64, i64), Errno> {
     let r1;
     let r2;
     let ok: i64;
@@ -44,18 +82,13 @@ unsafe fn syscall(trap: i64, a1: i64, a2: i64, a3: i64) -> Result<(i64, i64), i6
 }
 
 #[no_mangle]
-unsafe extern "C" fn atexit(_function: Option<extern "C" fn()>) -> c_int {
-    0
-}
-
-#[no_mangle]
 unsafe extern "C" fn exit(status: c_int) {
-    let _ = syscall(1, status as i64, 0, 0);
+    let _ = syscall(SYS_EXIT, status.into(), Arg::none(), Arg::none());
 }
 
 #[no_mangle]
 unsafe extern "C" fn write(filedes: c_int, buf: *const c_void, nbyte: usize) -> isize {
-    match syscall(4, filedes as i64, buf as i64, nbyte as i64) {
+    match syscall3(SYS_WRITE, filedes.into(), buf.into(), nbyte.into()) {
         Ok((r0, _)) => r0 as isize,
         Err(_) => -1,
     }
@@ -80,6 +113,11 @@ unsafe extern "C" fn memset(dst: *mut c_void, c: c_int, len: usize) -> *mut c_vo
 
 #[no_mangle]
 unsafe extern "C" fn _init_tls(_tls: *mut c_void) {}
+
+#[no_mangle]
+unsafe extern "C" fn atexit(_function: Option<extern "C" fn()>) -> c_int {
+    0
+}
 
 #[no_mangle]
 pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
