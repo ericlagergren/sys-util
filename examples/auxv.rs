@@ -39,22 +39,32 @@ ok:
     CALL	runtime·exitsyscall<ABIInternal>(SB)
     RET
 */
-unsafe fn syscall(trap: i64, a1: i64, a2: i64, a3: i64) -> (i64, i64) {
+unsafe fn syscall(trap: i64, a1: i64, a2: i64, a3: i64) -> Result<(i64, i64), i64> {
     let r1;
     let r2;
-    let err;
+    let ok;
     asm!(
         "syscall",
         "setc dl",
-        "movzx dl, {err}"
+        "movzx dl, {ok}",
         inlateout("rax") trap => r1,
         in("rdi") a1,
         in("rsi") a2,
         inlateout("rdx") a3 => r2,
-        out(reg) err,
+        out(reg) ok,
+        // FreeBSD clobbers these registers.
+        out("r8") _,
+        out("r9") _,
+        out("r10") _,
+        // We clobber `dl`.
+        out("dl") _,
         options(nostack),
     );
-    (r1, r2)
+    if out != 0 {
+        Ok((r1, r2))
+    } else {
+        Err(r1)
+    }
 }
 
 #[no_mangle]
