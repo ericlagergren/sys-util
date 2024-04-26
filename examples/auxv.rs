@@ -15,12 +15,14 @@ use sys_auxv::AuxVec;
 const SYS_EXIT: i64 = 1;
 const SYS_WRITE: i64 = 1;
 
+type RawPtr = *mut c_void;
+
 #[repr(transparent)]
-struct Arg(*mut c_void);
+struct Arg(RawPtr);
 
 impl Arg {
     const fn none() -> Self {
-        Self(0 as usize as _)
+        Self(0 as usize as RawPtr)
     }
 
     const fn into_asm(self) -> *mut c_void {
@@ -30,25 +32,25 @@ impl Arg {
 
 impl From<usize> for Arg {
     fn from(v: usize) -> Self {
-        Self(v as _)
+        Self(v as RawPtr)
     }
 }
 
 impl From<c_int> for Arg {
     fn from(v: c_int) -> Self {
-        Self(v as usize as _)
+        Self(v as usize as RawPtr)
     }
 }
 
 impl<T> From<*mut T> for Arg {
     fn from(v: *mut T) -> Self {
-        Self(v as _)
+        Self(v.cast())
     }
 }
 
 impl<T> From<*const T> for Arg {
     fn from(v: *const T) -> Self {
-        Self(v as _)
+        Self(v.cast_mut())
     }
 }
 
