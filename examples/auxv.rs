@@ -50,7 +50,7 @@ impl<T> From<*mut T> for Arg {
 
 impl<T> From<*const T> for Arg {
     fn from(v: *const T) -> Self {
-        Self(v.cast().cast_mut())
+        Self(v.cast::<c_void>().cast_mut())
     }
 }
 
