@@ -18,27 +18,6 @@ use core::{
 
 use sys_auxv::AuxVec;
 
-/*
-TEXT	·Syscall(SB),NOSPLIT,$0-56
-    CALL	runtime·entersyscall<ABIInternal>(SB)
-    MOVQ	trap+0(FP), AX	// syscall entry
-    MOVQ	a1+8(FP), DI
-    MOVQ	a2+16(FP), SI
-    MOVQ	a3+24(FP), DX
-    SYSCALL
-    JCC	ok
-    MOVQ	$-1, r1+32(FP)	// r1
-    MOVQ	$0, r2+40(FP)	// r2
-    MOVQ	AX, err+48(FP)	// errno
-    CALL	runtime·exitsyscall<ABIInternal>(SB)
-    RET
-ok:
-    MOVQ	AX, r1+32(FP)	// r1
-    MOVQ	DX, r2+40(FP)	// r2
-    MOVQ	$0, err+48(FP)	// errno
-    CALL	runtime·exitsyscall<ABIInternal>(SB)
-    RET
-*/
 unsafe fn syscall(trap: i64, a1: i64, a2: i64, a3: i64) -> Result<(i64, i64), i64> {
     let r1;
     let r2;
@@ -93,7 +72,9 @@ unsafe extern "C" fn atexit(_function: Option<extern "C" fn()>) -> c_int {
 }
 
 #[no_mangle]
-unsafe extern "C" fn exit(_status: c_int) {}
+unsafe extern "C" fn exit(status: c_int) {
+    let _ = syscall(1, status as i64, 0, 0);
+}
 
 #[no_mangle]
 unsafe extern "C" fn write(filedes: c_int, buf: *const c_void, nbyte: usize) -> isize {
@@ -116,9 +97,6 @@ struct Stdout;
 
 impl fmt::Write for Stdout {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        extern "C" {
-            fn write(filedes: c_int, buf: *const c_void, nbyte: usize) -> c_int;
-        }
         let mut buf = s.as_bytes();
         while !buf.is_empty() {
             // SAFETY: FFI call, no invariants.
