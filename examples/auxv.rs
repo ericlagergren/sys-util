@@ -22,6 +22,10 @@ impl Arg {
     const fn none() -> Self {
         Self(0 as usize as _)
     }
+
+    const fn into_asm(self) -> *mut c_void {
+        self.0
+    }
 }
 
 impl From<usize> for Arg {
@@ -69,9 +73,9 @@ unsafe fn syscall3(trap: i64, a1: Arg, a2: Arg, a3: Arg) -> Result<(i64, i64), E
         "movzx {ok}, r8b",
 
         inlateout("rax") trap => r1,
-        in("rdi") a1,
-        in("rsi") a2,
-        inlateout("rdx") a3 => r2,
+        in("rdi") a1.into_asm(),
+        in("rsi") a2.into_asm(),
+        inlateout("rdx") a3.into_asm() => r2,
         ok = out(reg) ok,
 
         // FreeBSD clobbers these registers.
