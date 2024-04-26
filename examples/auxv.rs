@@ -45,23 +45,22 @@ unsafe fn syscall(trap: i64, a1: i64, a2: i64, a3: i64) -> Result<(i64, i64), i6
     let ok;
     asm!(
         "syscall",
-        "setc dl",
-        "movzx dl, {ok}",
-
-        ok = out(reg) ok,
+        "setc r8b",
+        "movzx r8b, {ok}",
 
         inlateout("rax") trap => r1,
         in("rdi") a1,
         in("rsi") a2,
         inlateout("rdx") a3 => r2,
+        ok = out(reg) ok,
 
         // FreeBSD clobbers these registers.
-        out("r8") _,
+        //out("r8") _,
         out("r9") _,
         out("r10") _,
 
         // We clobber `dl`.
-        out("dl") _,
+        out("r8b") _,
 
         options(nostack),
     );
