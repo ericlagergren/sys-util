@@ -69,19 +69,19 @@ macro_rules! syscall {
 }
 
 unsafe fn syscall3(trap: i64, a1: Arg, a2: Arg, a3: Arg) -> Result<(i64, i64), Errno> {
+    let r0;
     let r1;
-    let r2;
-    let ok: i64;
+    let err: i64;
     asm!(
         "syscall",
         "setc r8b",
-        "movzx {ok}, r8b",
+        "movzx {err}, r8b",
 
-        inlateout("rax") trap => r1,
+        inlateout("rax") trap => r0,
         in("rdi") a1.into_asm(),
         in("rsi") a2.into_asm(),
-        inlateout("rdx") a3.into_asm() => r2,
-        ok = out(reg) ok,
+        inlateout("rdx") a3.into_asm() => r1,
+        err = out(reg) err,
 
         // FreeBSD clobbers these registers.
         out("r9") _,
@@ -92,10 +92,10 @@ unsafe fn syscall3(trap: i64, a1: Arg, a2: Arg, a3: Arg) -> Result<(i64, i64), E
 
         options(nostack),
     );
-    if ok == 0 {
-        Ok((r1, r2))
+    if err != 0 {
+        Err(r0)
     } else {
-        Err(r1)
+        Ok((r0, r1))
     }
 }
 
