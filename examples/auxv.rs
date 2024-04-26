@@ -19,7 +19,7 @@ unsafe fn syscall(trap: i64, a1: i64, a2: i64, a3: i64) -> Result<(i64, i64), i6
     asm!(
         "syscall",
         "setc r8b",
-        "movzx r8b, {ok}",
+        "movzx {ok}, r8b",
 
         inlateout("rax") trap => r1,
         in("rdi") a1,
