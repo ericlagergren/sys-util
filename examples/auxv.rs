@@ -83,6 +83,7 @@ unsafe extern "C" fn _init_tls(_tls: *mut c_void) {}
 
 #[no_mangle]
 pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
+    let _ = writeln!(Stdout, "hello, world!");
     let auxv = AuxVec::from_static();
     let _ = writeln!(Stdout, "{auxv:#}");
     42
