@@ -30,7 +30,7 @@ impl Arg {
 
 impl From<usize> for Arg {
     fn from(v: usize) -> Self {
-        Self(v as usize)
+        Self(v as _)
     }
 }
 
