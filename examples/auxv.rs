@@ -65,7 +65,7 @@ unsafe fn syscall(trap: i64, a1: i64, a2: i64, a3: i64) -> Result<(i64, i64), i6
 
         options(nostack),
     );
-    if out != 0 {
+    if ok != 0 {
         Ok((r1, r2))
     } else {
         Err(r1)
