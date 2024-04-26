@@ -42,7 +42,7 @@ ok:
 unsafe fn syscall(trap: i64, a1: i64, a2: i64, a3: i64) -> Result<(i64, i64), i64> {
     let r1;
     let r2;
-    let ok;
+    let ok: i64;
     asm!(
         "syscall",
         "setc r8b",
