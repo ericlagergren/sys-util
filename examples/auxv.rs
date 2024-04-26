@@ -145,16 +145,20 @@ pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
     101
 }
 
+macro_rules! println {
+    ($($arg:tt)*) => { let _ = writeln!(Stdout, $($arg)*); };
+}
+
 fn rmain() -> fmt::Result {
-    writeln!(Stdout, "hello, world!")?;
-    writeln!("printing some more stuff 123 456 789 0")?;
+    println!("hello, world!")?;
+    println!("printing some more stuff 123 456 789 0")?;
 
     let auxv = AuxVec::from_static();
-    writeln!(Stdout, "just got auxvec!")?;
-    writeln!(Stdout, "len = {} #", auxv.len())?;
-    writeln!(Stdout, "{auxv:#}")?;
+    println!("just got auxvec!")?;
+    println!("len = {} #", auxv.len())?;
+    println!("{auxv:#}")?;
 
-    write!(Stdout, "\n")?;
+    println!("\n");
     Ok(())
 }
 
