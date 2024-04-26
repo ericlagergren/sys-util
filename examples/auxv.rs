@@ -86,6 +86,7 @@ pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
     let _ = writeln!(Stdout, "hello, world!");
     let auxv = AuxVec::from_static();
     let _ = writeln!(Stdout, "{auxv:#}\n");
+    let _ = write!(Stdout, "\n\n\n\n");
     // SAFETY: FFI call, no invariants.
     unsafe { exit(33) }
     101
