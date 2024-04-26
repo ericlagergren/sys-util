@@ -20,5 +20,5 @@ libc = { version = "0.2.153" }
 name = "auxv"
 
 [profile.example]
-inherits = "dev"
+inherits = "release"
 panic = "abort"
