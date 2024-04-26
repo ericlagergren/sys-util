@@ -12,9 +12,6 @@ use core::{
 
 use sys_auxv::AuxVec;
 
-const SYS_EXIT: i64 = 1;
-const SYS_WRITE: i64 = 4;
-
 type RawPtr = *mut c_void;
 
 #[repr(transparent)]
@@ -55,6 +52,9 @@ impl<T> From<*const T> for Arg {
 }
 
 type Errno = i64;
+
+const SYS_EXIT: i64 = 1;
+const SYS_WRITE: i64 = 4;
 
 macro_rules! syscall {
     ($trap:expr, $arg1:expr) => {
