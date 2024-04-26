@@ -1,14 +1,8 @@
 #![no_std]
 #![no_main]
+#![allow(internal_features)]
 #![feature(lang_items)]
-#![cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "illumos",
-    target_os = "linux",
-    target_os = "netbsd",
-    target_os = "solaris",
-))]
+#![cfg(all(target_os = "freebsd", target_arch = "x86_64"))]
 
 use core::{
     arch::asm,
@@ -50,23 +44,6 @@ unsafe fn syscall(trap: i64, a1: i64, a2: i64, a3: i64) -> Result<(i64, i64), i6
 }
 
 #[no_mangle]
-unsafe extern "C" fn memcpy(dst: *mut c_void, src: *const c_void, n: usize) -> *mut c_void {
-    for i in 0..n {
-        dst.add(i).write_volatile(src.read_volatile())
-    }
-    dst
-}
-
-#[no_mangle]
-unsafe extern "C" fn memset(dst: *mut c_void, c: c_int, len: usize) -> *mut c_void {
-    let ptr: *mut u8 = dst.cast();
-    for i in 0..len {
-        ptr.add(i).write_volatile(c as u8)
-    }
-    dst
-}
-
-#[no_mangle]
 unsafe extern "C" fn atexit(_function: Option<extern "C" fn()>) -> c_int {
     0
 }
@@ -82,6 +59,23 @@ unsafe extern "C" fn write(filedes: c_int, buf: *const c_void, nbyte: usize) -> 
         Ok((r0, _)) => r0 as isize,
         Err(_) => -1,
     }
+}
+
+#[no_mangle]
+unsafe extern "C" fn memcpy(dst: *mut c_void, src: *const c_void, n: usize) -> *mut c_void {
+    for i in 0..n {
+        dst.add(i).write_volatile(src.read_volatile())
+    }
+    dst
+}
+
+#[no_mangle]
+unsafe extern "C" fn memset(dst: *mut c_void, c: c_int, len: usize) -> *mut c_void {
+    let ptr: *mut u8 = dst.cast();
+    for i in 0..len {
+        ptr.add(i).write_volatile(c as u8)
+    }
+    dst
 }
 
 #[no_mangle]
