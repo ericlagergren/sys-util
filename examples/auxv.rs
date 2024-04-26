@@ -50,6 +50,15 @@ impl<T> From<*const T> for Arg {
 
 type Errno = i64;
 
+macro_rules! syscall {
+    ($trap:expr, $arg1:expr) => {
+        syscall3($trap, $arg1.into(), Arg::none(), Arg::none())
+    };
+    ($trap:expr, $arg1:expr, $arg2:expr, $arg3:expr) => {
+        syscall3($trap, $arg1.into(), $arg2.into(), $arg3.into())
+    };
+}
+
 unsafe fn syscall3(trap: i64, a1: Arg, a2: Arg, a3: Arg) -> Result<(i64, i64), Errno> {
     let r1;
     let r2;
@@ -83,12 +92,12 @@ unsafe fn syscall3(trap: i64, a1: Arg, a2: Arg, a3: Arg) -> Result<(i64, i64), E
 
 #[no_mangle]
 unsafe extern "C" fn exit(status: c_int) {
-    let _ = syscall(SYS_EXIT, status.into(), Arg::none(), Arg::none());
+    let _ = syscall!(SYS_EXIT, status.into());
 }
 
 #[no_mangle]
 unsafe extern "C" fn write(filedes: c_int, buf: *const c_void, nbyte: usize) -> isize {
-    match syscall3(SYS_WRITE, filedes.into(), buf.into(), nbyte.into()) {
+    match syscall!(SYS_WRITE, filedes.into(), buf.into(), nbyte.into()) {
         Ok((r0, _)) => r0 as isize,
         Err(_) => -1,
     }
