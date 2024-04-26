@@ -13,7 +13,7 @@ use core::{
 use sys_auxv::AuxVec;
 
 const SYS_EXIT: i64 = 1;
-const SYS_WRITE: i64 = 1;
+const SYS_WRITE: i64 = 4;
 
 type RawPtr = *mut c_void;
 
