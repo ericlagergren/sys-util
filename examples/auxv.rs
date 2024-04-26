@@ -146,7 +146,8 @@ pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
 }
 
 macro_rules! println {
-    ($($arg:tt)*) => { let _ = writeln!(Stdout, $($arg)*); };
+    () => {{ let _ = write!(Stdout, "\n"); }};
+    ($($arg:tt)*) => {{ let _ = writeln!(Stdout, $($arg)*); }};
 }
 
 fn rmain() -> fmt::Result {
