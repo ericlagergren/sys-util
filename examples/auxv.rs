@@ -96,9 +96,9 @@ unsafe extern "C" fn atexit(_function: Option<extern "C" fn()>) -> c_int {
 unsafe extern "C" fn exit(_status: c_int) {}
 
 #[no_mangle]
-unsafe extern "C" fn write(filedes: c_int, buf: *const c_void, nbyte: usize) -> c_int {
+unsafe extern "C" fn write(filedes: c_int, buf: *const c_void, nbyte: usize) -> isize {
     match syscall(4, filedes as i64, buf as i64, nbyte as i64) {
-        Ok((r0, _)) => r0,
+        Ok((r0, _)) => r0 as isize,
         Err(_) => -1,
     }
 }
