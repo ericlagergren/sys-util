@@ -55,7 +55,6 @@ unsafe fn syscall(trap: i64, a1: i64, a2: i64, a3: i64) -> Result<(i64, i64), i6
         ok = out(reg) ok,
 
         // FreeBSD clobbers these registers.
-        //out("r8") _,
         out("r9") _,
         out("r10") _,
 
@@ -95,6 +94,14 @@ unsafe extern "C" fn atexit(_function: Option<extern "C" fn()>) -> c_int {
 
 #[no_mangle]
 unsafe extern "C" fn exit(_status: c_int) {}
+
+#[no_mangle]
+unsafe extern "C" fn write(filedes: c_int, buf: *const c_void, nbyte: usize) -> c_int {
+    match syscall(4, filedes as i64, buf as i64, nbyte as i64) {
+        Ok((r0, _)) => r0,
+        Err(_) => -1,
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
