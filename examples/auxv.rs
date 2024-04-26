@@ -152,6 +152,7 @@ macro_rules! println {
 
 fn rmain() -> fmt::Result {
     println!("hello, world!");
+    println!("hello, world!");
     println!("printing some more stuff 123 456 789 0");
 
     let auxv = AuxVec::from_static();
