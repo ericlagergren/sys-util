@@ -48,7 +48,7 @@ unsafe fn syscall(trap: i64, a1: i64, a2: i64, a3: i64) -> Result<(i64, i64), i6
         "setc dl",
         "movzx dl, {ok}",
 
-        out(reg) ok,
+        ok = out(reg) ok,
 
         inlateout("rax") trap => r1,
         in("rdi") a1,
