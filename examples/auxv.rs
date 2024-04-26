@@ -139,15 +139,23 @@ unsafe extern "C" fn atexit(_function: Option<extern "C" fn()>) -> c_int {
 
 #[no_mangle]
 pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
-    let _ = writeln!(Stdout, "hello, world!");
-    let auxv = AuxVec::from_static();
-    let _ = writeln!(Stdout, "just got auxvec!");
-    let _ = writeln!(Stdout, "len = {} #", auxv.len());
-    let _ = writeln!(Stdout, "{auxv:#}");
-    let _ = write!(Stdout, "\n");
+    let _ = rmain();
     // SAFETY: FFI call, no invariants.
     unsafe { exit(33) }
     101
+}
+
+fn rmain() -> fmt::Result {
+    writeln!(Stdout, "hello, world!")?;
+    writeln!("printing some more stuff 123 456 789 0")?;
+
+    let auxv = AuxVec::from_static();
+    writeln!(Stdout, "just got auxvec!")?;
+    writeln!(Stdout, "len = {} #", auxv.len())?;
+    writeln!(Stdout, "{auxv:#}")?;
+
+    write!(Stdout, "\n")?;
+    Ok(())
 }
 
 struct Stdout;
