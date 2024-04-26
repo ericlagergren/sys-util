@@ -92,12 +92,12 @@ unsafe fn syscall3(trap: i64, a1: Arg, a2: Arg, a3: Arg) -> Result<(i64, i64), E
 
 #[no_mangle]
 unsafe extern "C" fn exit(status: c_int) {
-    let _ = syscall!(SYS_EXIT, status.into());
+    let _ = syscall!(SYS_EXIT, status);
 }
 
 #[no_mangle]
 unsafe extern "C" fn write(filedes: c_int, buf: *const c_void, nbyte: usize) -> isize {
-    match syscall!(SYS_WRITE, filedes.into(), buf.into(), nbyte.into()) {
+    match syscall!(SYS_WRITE, filedes, buf, nbyte) {
         Ok((r0, _)) => r0 as isize,
         Err(_) => -1,
     }
