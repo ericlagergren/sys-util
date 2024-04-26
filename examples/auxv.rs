@@ -138,6 +138,7 @@ unsafe extern "C" fn atexit(_function: Option<extern "C" fn()>) -> c_int {
 pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
     let _ = writeln!(Stdout, "hello, world!");
     let auxv = AuxVec::from_static();
+    let _ = writeln!(Stdout, "len = {} #", auxv.len());
     let _ = writeln!(Stdout, "{auxv:#}");
     let _ = write!(Stdout, "\n");
     // SAFETY: FFI call, no invariants.
